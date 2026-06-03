@@ -262,6 +262,8 @@ services:
       REDIS_URL:           redis://redis:6379/0
       PRODUCT_SERVICE_URL: http://product-service:8000
       CART_SERVICE_URL:    http://cart-service:8000
+      PAYMENT_SERVICE_URL: http://payment-service:8000
+      SHIPPING_SERVICE_URL: http://shipping-service:8000
     depends_on:
       order-db:
         condition: service_healthy
@@ -329,6 +331,7 @@ services:
       SECRET_KEY:        ${SECRET_KEY}
       REDIS_URL:         redis://redis:6379/0
       ORDER_SERVICE_URL: http://order-service:8000
+      PAYMENT_SANDBOX:   "true"
     depends_on:
       payment-db:
         condition: service_healthy
