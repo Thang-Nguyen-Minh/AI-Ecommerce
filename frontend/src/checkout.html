@@ -38,8 +38,13 @@
                             <textarea id="shippingAddress" class="form-control" rows="3"
                                 placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành..." required></textarea>
                         </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="simulateFail">
+                            <label class="form-check-label text-muted small" for="simulateFail">
+                                <i class="fas fa-flask me-1"></i>Mô phỏng thanh toán lỗi (chế độ test)
+                            </label>
+                        </div>
                         <button type="submit" id="btnPlace" class="btn btn-primary w-100" disabled>
-                            <span class="spinner-border spinner-border-sm me-2 d-none" id="btnSpinner"></span>
                             Đang tải giỏ...
                         </button>
                     </form>

@@ -83,34 +83,62 @@ async function placeOrder(e) {
     const address = document.getElementById('shippingAddress').value.trim();
     if (!address) { showAlert('Vui lòng nhập địa chỉ giao hàng', 'warning'); return; }
 
-    showLoading('btnPlace');
+    // payment U-04: khóa nút, hiện trạng thái "đang xử lý"
+    const btn = document.getElementById('btnPlace');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý thanh toán...';
     document.getElementById('alertBox').className = 'alert d-none';
 
-    try {
-        const res = await fetch(`${ORDER_URL}/orders/`, {
-            method: 'POST',
-            headers: authHeader(),
-            body: JSON.stringify({ shipping_address: address }),
-        });
-        const order = await res.json();
+    const body = { shipping_address: address };
+    // Demo nhánh lỗi (payment U-02): gửi cờ sandbox simulate=fail
+    if (document.getElementById('simulateFail')?.checked) body.simulate = 'fail';
 
-        if (!res.ok && !order.id) {
-            throw new Error(order.error || `Lỗi ${res.status}`);
+    try {
+        // U-04: timeout phía client để không treo vô hạn nếu xử lý lâu
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), 15000);
+        let res;
+        try {
+            res = await fetch(`${ORDER_URL}/orders/`, {
+                method: 'POST',
+                headers: authHeader(),
+                body: JSON.stringify(body),
+                signal: ctrl.signal,
+            });
+        } finally {
+            clearTimeout(tid);
+        }
+        const data = await res.json();
+        const order = data.id ? data : data.order;  // 503 trả {error, order:{...}}
+
+        // U-07: payment-service sập (503) → báo thân thiện, giỏ KHÔNG mất
+        if (res.status === 503) {
+            showAlert(`Hệ thống thanh toán đang bận, vui lòng thử lại sau ít phút. (Đơn #${order?.id || '—'} chưa thanh toán)`, 'warning');
+            return;
+        }
+        if (!res.ok && !order) {
+            throw new Error(data.error || `Lỗi ${res.status}`);
         }
 
-        // U-04: thanh toán thành công → chuyển sang trang xác nhận
-        // U-05: thất bại → báo lỗi, có lối thử lại
+        // order U-04 / payment U-01: thành công → trang xác nhận đơn
         if (['PAID', 'SHIPPED', 'DELIVERED'].includes(order.status)) {
             window.location.href = `order-detail.html?id=${order.id}&new=1`;
         } else {
-            const errMsg = order.payment_error || 'Đặt hàng thất bại';
-            showAlert(`${errMsg} — <a href="order-detail.html?id=${order.id}">Xem đơn #${order.id}</a>`, 'danger');
+            // order U-05 / payment U-02: thất bại → báo lỗi rõ, KHÔNG hiện "đang giao", có lối thử lại
+            showAlert(
+                `<i class="fas fa-times-circle me-1"></i><strong>Thanh toán không thành công.</strong> ` +
+                `Đơn #${order.id} chưa được thanh toán. ` +
+                `<a href="order-detail.html?id=${order.id}" class="alert-link">Xem đơn</a> hoặc thử lại bên dưới.`,
+                'danger',
+            );
         }
-    } catch (e) {
-        // U-07: service lỗi giữa chừng → không mất giỏ
-        showAlert(e.message, 'danger');
+    } catch (err) {
+        // U-07: lỗi mạng/timeout giữa chừng → không mất giỏ
+        const msg = err.name === 'AbortError' ? 'Yêu cầu quá thời gian, vui lòng thử lại' : err.message;
+        showAlert(msg, 'danger');
     } finally {
-        hideLoading('btnPlace', '<i class="fas fa-check me-2"></i>Xác nhận đặt hàng');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-check me-2"></i>Xác nhận đặt hàng';
     }
 }
 
