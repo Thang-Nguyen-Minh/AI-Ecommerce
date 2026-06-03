@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sản phẩm — ecom-final</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark sticky-top" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/"><i class="fas fa-shopping-bag me-2"></i>ecom-final</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link active" href="products.html"><i class="fas fa-box me-1"></i>Sản phẩm</a></li>
+                <li class="nav-item"><a class="nav-link" href="cart.html"><i class="fas fa-shopping-cart me-1"></i>Giỏ hàng</a></li>
+                <li class="nav-item"><a class="nav-link" href="orders.html"><i class="fas fa-list me-1"></i>Đơn hàng</a></li>
+                <ul id="navAuthLinks" class="navbar-nav"></ul>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<header class="py-5 bg-light border-bottom">
+    <div class="container">
+        <div class="row align-items-center g-4">
+            <div class="col-lg-8">
+                <p class="text-primary fw-semibold mb-2">Product Service</p>
+                <h1 class="display-6 fw-bold mb-3">Danh sách sản phẩm</h1>
+                <p class="lead text-muted mb-0">Tìm kiếm, lọc danh mục và thêm sản phẩm vào giỏ hàng từ Product Service.</p>
+            </div>
+            <div class="col-lg-4">
+                <div class="bg-white rounded-4 shadow-sm p-4">
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Tổng sản phẩm</span>
+                        <strong id="totalProducts">—</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mt-2">
+                        <span class="text-muted">Danh mục</span>
+                        <strong id="totalCategories">—</strong>
+                    </div>
+                    <button id="seedDemoBtn" class="btn btn-outline-primary btn-sm w-100 mt-3">
+                        <i class="fas fa-database me-1"></i>Tạo dữ liệu demo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main class="container py-5">
+    <div id="alertBox" class="alert d-none" role="alert"></div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label for="searchInput" class="form-label">Tìm kiếm</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light"><i class="fas fa-search"></i></span>
+                        <input type="text" class="form-control" id="searchInput" placeholder="Tên sản phẩm, SKU, mô tả...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label for="categoryFilter" class="form-label">Danh mục</label>
+                    <select id="categoryFilter" class="form-select">
+                        <option value="">Tất cả danh mục</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="typeFilter" class="form-label">Loại</label>
+                    <select id="typeFilter" class="form-select">
+                        <option value="">Tất cả</option>
+                        <option value="general">General</option>
+                        <option value="book">Book</option>
+                        <option value="electronics">Electronics</option>
+                        <option value="fashion">Fashion</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button id="reloadBtn" class="btn btn-primary-custom text-white w-100">
+                        <i class="fas fa-redo me-2"></i>Tải lại
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="productList" class="row g-4"></div>
+
+    <div class="d-flex justify-content-center gap-2 mt-5">
+        <button id="prevPageBtn" class="btn btn-outline-secondary">
+            <i class="fas fa-chevron-left me-1"></i>Trang trước
+        </button>
+        <span id="pageInfo" class="btn btn-light disabled">Trang 1</span>
+        <button id="nextPageBtn" class="btn btn-outline-secondary">
+            Trang sau<i class="fas fa-chevron-right ms-1"></i>
+        </button>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/api.js"></script>
+<script>renderNavAuth();</script>
+<script src="js/products.js"></script>
+</body>
+</html>

@@ -392,7 +392,29 @@ function checkAuth() {
     }
 }
 
+/**
+ * Render link đăng nhập/đăng xuất vào phần tử có id navAuthLinks.
+ * Dùng trên các trang công khai (products, product-detail, index).
+ */
+function renderNavAuth() {
+    const el = document.getElementById('navAuthLinks');
+    if (!el) return;
+    if (api.isLoggedIn()) {
+        const user = api.getCurrentUser();
+        const isAdmin = user?.role === 'admin';
+        el.innerHTML = `
+            ${isAdmin ? '<li class="nav-item"><a class="nav-link" href="/admin/dashboard.html"><i class="fas fa-cog me-1"></i>Admin</a></li>' : ''}
+            <li class="nav-item"><a class="nav-link" href="/profile.html"><i class="fas fa-user me-1"></i>Hồ sơ</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" onclick="api.logout().then(()=>location.reload()); return false;"><i class="fas fa-sign-out-alt me-1"></i>Đăng xuất</a></li>
+        `;
+    } else {
+        el.innerHTML = `
+            <li class="nav-item"><a class="nav-link" href="/login.html"><i class="fas fa-sign-in-alt me-1"></i>Đăng nhập</a></li>
+        `;
+    }
+}
+
 // Export for use in other scripts
 if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { api, showAlert, hideAlert, showLoading, hideLoading, formatPrice, formatDate };
+    module.exports = { api, showAlert, hideAlert, showLoading, hideLoading, formatPrice, formatDate, renderNavAuth };
 }
