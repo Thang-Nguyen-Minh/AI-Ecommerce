@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hồ sơ — ecom-final</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <style>
+        .address-card { transition: box-shadow .2s; }
+        .address-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+        .badge-role-admin    { background: #dc3545; }
+        .badge-role-staff    { background: #fd7e14; }
+        .badge-role-customer { background: #0d6efd; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark sticky-top" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="/"><i class="fas fa-shopping-bag me-2"></i>ecom-final</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="products.html"><i class="fas fa-box me-1"></i>Sản phẩm</a></li>
+                <li class="nav-item"><a class="nav-link" href="cart.html"><i class="fas fa-shopping-cart me-1"></i>Giỏ hàng</a></li>
+                <li class="nav-item"><a class="nav-link" href="orders.html"><i class="fas fa-list me-1"></i>Đơn hàng</a></li>
+                <li class="nav-item"><a class="nav-link active" href="profile.html"><i class="fas fa-user me-1"></i>Hồ sơ</a></li>
+                <li class="nav-item"><a class="nav-link" href="#" onclick="doLogout(); return false;"><i class="fas fa-sign-out-alt me-1"></i>Đăng xuất</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-4">
+
+    <!-- Alert toàn trang -->
+    <div id="pageAlert" class="alert d-none mb-3" role="alert"></div>
+
+    <div class="row g-4">
+
+        <!-- ── Cột trái: Tóm tắt & Avatar ── -->
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body py-4">
+                    <div id="avatarArea" style="font-size:3.5rem">👤</div>
+                    <h5 id="sidebarName" class="mt-2 mb-1 fw-bold">...</h5>
+                    <p id="sidebarEmail" class="text-muted small mb-2">...</p>
+                    <span id="sidebarRole" class="badge">...</span>
+                </div>
+            </div>
+
+            <!-- Nav pills -->
+            <div class="list-group mt-3 shadow-sm" id="profileTabs" role="tablist">
+                <a href="#" class="list-group-item list-group-item-action active" onclick="showTab('tabInfo'); return false;">
+                    <i class="fas fa-id-card me-2"></i>Thông tin cá nhân
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" onclick="showTab('tabAddress'); return false;">
+                    <i class="fas fa-map-marker-alt me-2"></i>Địa chỉ giao hàng
+                </a>
+                <a href="#" class="list-group-item list-group-item-action" onclick="showTab('tabPassword'); return false;">
+                    <i class="fas fa-lock me-2"></i>Đổi mật khẩu
+                </a>
+            </div>
+        </div>
+
+        <!-- ── Cột phải: Nội dung tab ── -->
+        <div class="col-md-9">
+
+            <!-- Tab: Thông tin cá nhân -->
+            <div id="tabInfo" class="tab-pane-custom">
+                <div class="card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0"><i class="fas fa-id-card me-2"></i>Thông tin cá nhân</h6>
+                        <button class="btn btn-sm btn-outline-primary" id="btnEditToggle" onclick="toggleEdit()">
+                            <i class="fas fa-pen me-1"></i>Chỉnh sửa
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <!-- View mode -->
+                        <div id="viewMode">
+                            <div class="row gy-3">
+                                <div class="col-sm-6">
+                                    <label class="form-label text-muted small mb-0">Email</label>
+                                    <p id="vEmail" class="fw-500 mb-0">—</p>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label text-muted small mb-0">Tên đầy đủ</label>
+                                    <p id="vFullName" class="fw-500 mb-0">—</p>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label text-muted small mb-0">Điện thoại</label>
+                                    <p id="vPhone" class="fw-500 mb-0">—</p>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label text-muted small mb-0">Vai trò</label>
+                                    <p id="vRole" class="mb-0">—</p>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label text-muted small mb-0">Ngày tạo</label>
+                                    <p id="vCreated" class="fw-500 mb-0">—</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Edit mode -->
+                        <form id="editMode" class="d-none" onsubmit="saveProfile(event)">
+                            <div id="editAlert" class="alert d-none mb-3" role="alert"></div>
+                            <div class="row gy-3">
+                                <div class="col-sm-6">
+                                    <label class="form-label">Tên đầy đủ</label>
+                                    <input type="text" id="editFullName" class="form-control" placeholder="Nhập tên đầy đủ">
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label">Điện thoại</label>
+                                    <input type="tel" id="editPhone" class="form-control" placeholder="VD: 0912345678">
+                                </div>
+                            </div>
+                            <div class="mt-3 d-flex gap-2">
+                                <button type="submit" class="btn btn-primary" id="btnSaveProfile">
+                                    <i class="fas fa-save me-1"></i>Lưu thay đổi
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="toggleEdit()">Hủy</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Địa chỉ -->
+            <div id="tabAddress" class="tab-pane-custom d-none">
+                <div class="card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Địa chỉ giao hàng</h6>
+                        <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalAddress" onclick="openAddressModal()">
+                            <i class="fas fa-plus me-1"></i>Thêm địa chỉ
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="addressList"><div class="text-center py-3 text-muted">Đang tải...</div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Đổi mật khẩu -->
+            <div id="tabPassword" class="tab-pane-custom d-none">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h6 class="mb-0"><i class="fas fa-lock me-2"></i>Đổi mật khẩu</h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="passwordForm" onsubmit="changePassword(event)" style="max-width: 420px">
+                            <div id="pwdAlert" class="alert d-none mb-3" role="alert"></div>
+                            <div class="mb-3">
+                                <label class="form-label">Mật khẩu hiện tại</label>
+                                <input type="password" id="oldPassword" class="form-control" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Mật khẩu mới</label>
+                                <input type="password" id="newPassword" class="form-control" minlength="6" required>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label">Xác nhận mật khẩu mới</label>
+                                <input type="password" id="newPassword2" class="form-control" minlength="6" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary" id="btnChangePwd">
+                                <i class="fas fa-key me-1"></i>Đổi mật khẩu
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Thêm / Sửa địa chỉ -->
+<div class="modal fade" id="modalAddress" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalAddressTitle">Thêm địa chỉ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addressForm" onsubmit="submitAddress(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="addressId">
+                    <div id="addrAlert" class="alert d-none mb-3" role="alert"></div>
+                    <div class="row gy-3">
+                        <div class="col-sm-6">
+                            <label class="form-label">Họ tên người nhận <span class="text-danger">*</span></label>
+                            <input type="text" id="addrFullName" class="form-control" required>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">Điện thoại <span class="text-danger">*</span></label>
+                            <input type="tel" id="addrPhone" class="form-control" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Địa chỉ (số nhà, tên đường) <span class="text-danger">*</span></label>
+                            <input type="text" id="addrStreet" class="form-control" required>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">Phường/Xã</label>
+                            <input type="text" id="addrWard" class="form-control" placeholder="Không bắt buộc">
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">Quận/Huyện <span class="text-danger">*</span></label>
+                            <input type="text" id="addrDistrict" class="form-control" required>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">Tỉnh/Thành phố <span class="text-danger">*</span></label>
+                            <input type="text" id="addrCity" class="form-control" required>
+                        </div>
+                        <div class="col-sm-6 d-flex align-items-end">
+                            <div class="form-check mb-0">
+                                <input class="form-check-input" type="checkbox" id="addrIsDefault">
+                                <label class="form-check-label" for="addrIsDefault">Đặt làm địa chỉ mặc định</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary" id="btnSaveAddr">
+                        <i class="fas fa-save me-1"></i>Lưu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/api.js"></script>
+<script>
+    checkAuth();
+
+    // ── Helpers ───────────────────────────────────────────
+    function showTab(id) {
+        document.querySelectorAll('.tab-pane-custom').forEach(el => el.classList.add('d-none'));
+        document.getElementById(id).classList.remove('d-none');
+        document.querySelectorAll('#profileTabs a').forEach(el => el.classList.remove('active'));
+        const idx = {'tabInfo':0,'tabAddress':1,'tabPassword':2}[id];
+        document.querySelectorAll('#profileTabs a')[idx].classList.add('active');
+    }
+
+    function showInlineAlert(id, msg, type) {
+        const el = document.getElementById(id);
+        el.className = `alert alert-${type}`;
+        el.textContent = msg;
+        if (type === 'success') setTimeout(() => el.className = 'alert d-none', 3000);
+    }
+
+    const roleColors = { admin: 'danger', staff: 'warning text-dark', customer: 'primary' };
+    const roleIcons  = { admin: '👑', staff: '🛠', customer: '👤' };
+
+    // ── Load profile ──────────────────────────────────────
+    let currentProfile = null;
+
+    async function loadProfile() {
+        try {
+            currentProfile = await api.getProfile();
+            const p = currentProfile;
+
+            document.getElementById('sidebarName').textContent  = p.full_name || p.email;
+            document.getElementById('sidebarEmail').textContent = p.email;
+            const roleEl = document.getElementById('sidebarRole');
+            roleEl.textContent  = `${roleIcons[p.role] || ''} ${p.role_display || p.role}`;
+            roleEl.className    = `badge bg-${roleColors[p.role] || 'secondary'}`;
+
+            document.getElementById('vEmail').textContent    = p.email;
+            document.getElementById('vFullName').textContent = p.full_name || '(Chưa cập nhật)';
+            document.getElementById('vPhone').textContent    = p.phone    || '(Chưa cập nhật)';
+            document.getElementById('vRole').innerHTML       = `<span class="badge bg-${roleColors[p.role] || 'secondary'}">${roleIcons[p.role] || ''} ${p.role_display || p.role}</span>`;
+            document.getElementById('vCreated').textContent  = formatDate(p.created_at);
+
+        } catch (e) {
+            showInlineAlert('pageAlert', 'Không tải được thông tin: ' + e.message, 'danger');
+        }
+    }
+
+    // ── Edit profile ──────────────────────────────────────
+    let editMode = false;
+    function toggleEdit() {
+        editMode = !editMode;
+        document.getElementById('viewMode').classList.toggle('d-none', editMode);
+        document.getElementById('editMode').classList.toggle('d-none', !editMode);
+        document.getElementById('btnEditToggle').innerHTML = editMode
+            ? '<i class="fas fa-times me-1"></i>Hủy'
+            : '<i class="fas fa-pen me-1"></i>Chỉnh sửa';
+
+        if (editMode && currentProfile) {
+            document.getElementById('editFullName').value = currentProfile.full_name || '';
+            document.getElementById('editPhone').value    = currentProfile.phone    || '';
+        }
+    }
+
+    async function saveProfile(e) {
+        e.preventDefault();
+        const fullName = document.getElementById('editFullName').value.trim();
+        const phone    = document.getElementById('editPhone').value.trim();
+        showLoading('btnSaveProfile');
+        try {
+            await api.updateProfile(fullName, phone);
+            await loadProfile();
+            toggleEdit();
+            showInlineAlert('pageAlert', 'Cập nhật thông tin thành công!', 'success');
+        } catch (err) {
+            showInlineAlert('editAlert', err.message, 'danger');
+        } finally {
+            hideLoading('btnSaveProfile', '<i class="fas fa-save me-1"></i>Lưu thay đổi');
+        }
+    }
+
+    // ── Address ───────────────────────────────────────────
+    async function loadAddresses() {
+        const container = document.getElementById('addressList');
+        try {
+            const addrs = await api.getAddresses();
+            if (addrs.length === 0) {
+                container.innerHTML = '<p class="text-muted py-2">Chưa có địa chỉ nào. Thêm địa chỉ để giao hàng nhanh hơn.</p>';
+                return;
+            }
+            container.innerHTML = addrs.map(a => `
+                <div class="card address-card mb-3 ${a.is_default ? 'border-primary' : ''}">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <strong>${a.full_name}</strong>
+                                ${a.is_default ? '<span class="badge bg-primary ms-2">Mặc định</span>' : ''}
+                                <p class="text-muted small mb-0 mt-1">
+                                    <i class="fas fa-phone me-1"></i>${a.phone}
+                                </p>
+                                <p class="text-muted small mb-0">
+                                    <i class="fas fa-map-pin me-1"></i>${a.street}${a.ward ? ', ' + a.ward : ''}, ${a.district}, ${a.city}
+                                </p>
+                            </div>
+                            <div class="d-flex gap-2 flex-shrink-0 ms-2">
+                                ${!a.is_default ? `<button class="btn btn-sm btn-outline-primary" onclick="setDefaultAddr(${a.id})" title="Đặt mặc định"><i class="fas fa-star"></i></button>` : ''}
+                                <button class="btn btn-sm btn-outline-secondary" onclick="editAddress(${a.id})" title="Sửa"><i class="fas fa-pen"></i></button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteAddress(${a.id})" title="Xóa"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } catch (e) {
+            container.innerHTML = `<div class="alert alert-danger">${e.message}</div>`;
+        }
+    }
+
+    function openAddressModal(addr = null) {
+        document.getElementById('modalAddressTitle').textContent = addr ? 'Sửa địa chỉ' : 'Thêm địa chỉ';
+        document.getElementById('addressId').value     = addr ? addr.id : '';
+        document.getElementById('addrFullName').value  = addr ? addr.full_name  : '';
+        document.getElementById('addrPhone').value     = addr ? addr.phone      : '';
+        document.getElementById('addrStreet').value    = addr ? addr.street     : '';
+        document.getElementById('addrWard').value      = addr ? (addr.ward || '') : '';
+        document.getElementById('addrDistrict').value  = addr ? addr.district   : '';
+        document.getElementById('addrCity').value      = addr ? addr.city       : '';
+        document.getElementById('addrIsDefault').checked = addr ? addr.is_default : false;
+        document.getElementById('addrAlert').className = 'alert d-none';
+    }
+
+    async function editAddress(id) {
+        const addrs = await api.getAddresses();
+        const addr = addrs.find(a => a.id === id);
+        if (!addr) return;
+        openAddressModal(addr);
+        new bootstrap.Modal(document.getElementById('modalAddress')).show();
+    }
+
+    async function submitAddress(e) {
+        e.preventDefault();
+        const id = document.getElementById('addressId').value;
+        const data = {
+            full_name:  document.getElementById('addrFullName').value.trim(),
+            phone:      document.getElementById('addrPhone').value.trim(),
+            street:     document.getElementById('addrStreet').value.trim(),
+            ward:       document.getElementById('addrWard').value.trim(),
+            district:   document.getElementById('addrDistrict').value.trim(),
+            city:       document.getElementById('addrCity').value.trim(),
+            is_default: document.getElementById('addrIsDefault').checked,
+        };
+        showLoading('btnSaveAddr');
+        try {
+            if (id) {
+                await api.updateAddress(id, data);
+            } else {
+                await api.addAddress(data);
+            }
+            bootstrap.Modal.getInstance(document.getElementById('modalAddress')).hide();
+            await loadAddresses();
+            showInlineAlert('pageAlert', id ? 'Đã cập nhật địa chỉ!' : 'Đã thêm địa chỉ mới!', 'success');
+        } catch (err) {
+            showInlineAlert('addrAlert', err.message, 'danger');
+        } finally {
+            hideLoading('btnSaveAddr', '<i class="fas fa-save me-1"></i>Lưu');
+        }
+    }
+
+    async function setDefaultAddr(id) {
+        try {
+            await api.setDefaultAddress(id);
+            await loadAddresses();
+            showInlineAlert('pageAlert', 'Đã đặt làm địa chỉ mặc định!', 'success');
+        } catch (e) {
+            showInlineAlert('pageAlert', e.message, 'danger');
+        }
+    }
+
+    async function deleteAddress(id) {
+        if (!confirm('Xóa địa chỉ này?')) return;
+        try {
+            await api.deleteAddress(id);
+            await loadAddresses();
+            showInlineAlert('pageAlert', 'Đã xóa địa chỉ!', 'success');
+        } catch (e) {
+            showInlineAlert('pageAlert', e.message, 'danger');
+        }
+    }
+
+    // ── Change password ───────────────────────────────────
+    async function changePassword(e) {
+        e.preventDefault();
+        const oldPwd  = document.getElementById('oldPassword').value;
+        const newPwd  = document.getElementById('newPassword').value;
+        const newPwd2 = document.getElementById('newPassword2').value;
+
+        if (newPwd !== newPwd2) {
+            showInlineAlert('pwdAlert', 'Mật khẩu mới không khớp!', 'danger');
+            return;
+        }
+        showLoading('btnChangePwd');
+        try {
+            await api.changePassword(oldPwd, newPwd);
+            document.getElementById('passwordForm').reset();
+            showInlineAlert('pwdAlert', 'Đổi mật khẩu thành công!', 'success');
+        } catch (err) {
+            showInlineAlert('pwdAlert', err.message || 'Đổi mật khẩu thất bại', 'danger');
+        } finally {
+            hideLoading('btnChangePwd', '<i class="fas fa-key me-1"></i>Đổi mật khẩu');
+        }
+    }
+
+    // ── Logout ────────────────────────────────────────────
+    async function doLogout() {
+        await api.logout();
+        window.location.href = '/login.html';
+    }
+
+    // ── Init ──────────────────────────────────────────────
+    loadProfile();
+    loadAddresses();
+
+    // Tải addresses khi switch sang tab address
+    document.querySelectorAll('#profileTabs a')[1].addEventListener('click', loadAddresses);
+</script>
+</body>
+</html>

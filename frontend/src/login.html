@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập — ecom-final</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <div class="text-center mb-4">
+            <div style="font-size:2.5rem">🔐</div>
+            <h4 class="fw-bold mt-2">Đăng nhập</h4>
+            <p class="text-muted small">Truy cập tài khoản của bạn</p>
+        </div>
+
+        <div id="alertBox" class="alert d-none mb-3" role="alert"></div>
+
+        <form id="loginForm" autocomplete="off">
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input type="email" id="email" class="form-control" placeholder="Nhập email của bạn" required>
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label">Mật khẩu</label>
+                <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary-custom text-white w-100 py-2 mb-3" id="btnLogin">
+                <i class="fas fa-sign-in-alt me-2"></i>Đăng nhập
+            </button>
+        </form>
+
+        <hr class="my-3">
+
+        <p class="text-center text-muted small mb-3">
+            Chưa có tài khoản? <a href="register.html" class="text-primary-custom text-decoration-none fw-bold">Đăng ký ngay</a>
+        </p>
+
+        <a href="/" class="btn btn-outline-secondary w-100">
+            <i class="fas fa-home me-2"></i>Quay lại trang chủ
+        </a>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="js/api.js"></script>
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+
+        showLoading('btnLogin');
+
+        try {
+            const result = await api.login(email, password);
+            if (result) {
+                showAlert('Đăng nhập thành công! Chuyển hướng...', 'success');
+                const user = result.user || api.getCurrentUser();
+                const dest = user?.role === 'admin' ? '/admin/dashboard.html' : '/profile.html';
+                setTimeout(() => {
+                    window.location.href = dest;
+                }, 1000);
+            }
+        } catch (error) {
+            showAlert(error.message || 'Đăng nhập thất bại', 'danger');
+        } finally {
+            hideLoading('btnLogin', '<i class="fas fa-sign-in-alt me-2"></i>Đăng nhập');
+        }
+    });
+</script>
+</body>
+</html>
