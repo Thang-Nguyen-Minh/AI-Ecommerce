@@ -314,17 +314,28 @@ class APIClient {
         return res.json();
     }
 
-    // ORDER ENDPOINTS
+    // ORDER ENDPOINTS (order-service: port 8004)
     async getOrders() {
-        return this.get('/orders/');
+        const res = await fetch('http://localhost:8004/orders/', { headers: { Authorization: `Bearer ${this.getToken()}` } });
+        if (!res.ok) throw new Error(`Lỗi ${res.status}`);
+        return res.json();
     }
 
     async getOrder(orderId) {
-        return this.get(`/orders/${orderId}/`);
+        const res = await fetch(`http://localhost:8004/orders/${orderId}`, { headers: { Authorization: `Bearer ${this.getToken()}` } });
+        if (!res.ok) throw new Error(`Lỗi ${res.status}`);
+        return res.json();
     }
 
-    async createOrder(data) {
-        return this.post('/orders/', data);
+    async createOrder(shippingAddress) {
+        const res = await fetch('http://localhost:8004/orders/', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${this.getToken()}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ shipping_address: shippingAddress }),
+        });
+        const data = await res.json();
+        if (!res.ok && !data.id) throw new Error(data.error || `Lỗi ${res.status}`);
+        return data;
     }
 
     // PAYMENT ENDPOINTS
