@@ -1,5 +1,44 @@
 const ORDER_URL = 'http://localhost:8004';
 const PRODUCT_URL = window.PRODUCT_API_URL || 'http://localhost:8002';
+const SHIPPING_URL = 'http://localhost:8006';
+
+// U-01/U-04: tracker giao hàng (chỉ xem, không có nút sửa — U-03)
+async function renderShipping(order) {
+    // U-05: đơn chưa thanh toán → KHÔNG hiện phần giao hàng
+    if (!['PAID', 'SHIPPED', 'DELIVERED'].includes(order.status)) return '';
+
+    let shipStatus = null;
+    try {
+        const r = await fetch(`${SHIPPING_URL}/shipping/status?order_id=${order.id}`);
+        if (r.ok) shipStatus = (await r.json()).status;
+    } catch {}
+
+    const steps = ['Processing', 'Shipping', 'Delivered'];
+    const labels = { Processing: 'Đang xử lý', Shipping: 'Đang giao', Delivered: 'Đã giao' };
+    // U-04: có đơn PAID nhưng chưa có shipment → hiển thị "Đang xử lý"
+    const current = shipStatus || 'Processing';
+    const idx = steps.indexOf(current);
+
+    const tracker = steps.map((s, i) => `
+        <div class="text-center flex-fill">
+            <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center
+                ${i <= idx ? 'bg-success text-white' : 'bg-light text-muted'}"
+                style="width:38px;height:38px">
+                <i class="fas ${i < idx ? 'fa-check' : (i === idx ? 'fa-truck' : 'fa-circle')}"></i>
+            </div>
+            <div class="small mt-1 ${i <= idx ? 'fw-bold' : 'text-muted'}">${labels[s]}</div>
+        </div>
+        ${i < steps.length - 1 ? `<div class="flex-fill border-top mt-3 ${i < idx ? 'border-success' : ''}" style="height:1px"></div>` : ''}
+    `).join('');
+
+    return `
+        <div class="card shadow-sm mt-3">
+            <div class="card-header"><i class="fas fa-truck me-2"></i>Trạng thái giao hàng</div>
+            <div class="card-body">
+                <div class="d-flex align-items-start justify-content-between">${tracker}</div>
+            </div>
+        </div>`;
+}
 
 const STATUS_LABEL = {
     PENDING:        { text: 'Chờ thanh toán', cls: 'warning',   icon: 'fa-clock'          },
@@ -49,6 +88,8 @@ async function render(order) {
             <td class="text-end fw-bold">${formatPrice(parseFloat(item.unit_price) * item.quantity)}</td>
         </tr>`).join('');
 
+    const shippingHtml = await renderShipping(order);
+
     document.getElementById('detail').innerHTML = `
         <div class="card shadow-sm mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -84,7 +125,8 @@ async function render(order) {
                     ${['PENDING','PAYMENT_FAILED'].includes(order.status) ? `<a href="checkout.html" class="btn btn-primary btn-sm">Đặt lại</a>` : ''}
                 </div>
             </div>
-        </div>`;
+        </div>
+        ${shippingHtml}`;
 }
 
 document.addEventListener('DOMContentLoaded', loadOrderDetail);
