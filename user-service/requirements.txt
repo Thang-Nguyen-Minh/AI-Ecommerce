@@ -1,0 +1,3 @@
+# Đã có trong base: Django, DRF, simplejwt, mysqlclient, corsheaders
+# Thêm đặc thù cho user-service:
+Pillow==10.3.0
