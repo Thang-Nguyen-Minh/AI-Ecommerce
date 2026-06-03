@@ -58,6 +58,9 @@ async function loadCart() {
         if (!res.ok) throw new Error(`Lỗi ${res.status}`);
         cartData = await res.json();
         await renderCart();
+        // U-01: cập nhật badge ngay sau khi load
+        const total = (cartData?.items || []).reduce((s, i) => s + i.quantity, 0);
+        updateCartBadge(total);
     } catch (e) {
         // U-09: lỗi service → thông báo thân thiện
         document.getElementById('cartBody').innerHTML = `
@@ -192,6 +195,8 @@ async function changeQty(productId, newQty, stock) {
         }
         cartData = await res.json();
         await renderCart();  // U-04: cập nhật tổng tiền ngay
+        const total = (cartData?.items || []).reduce((s, i) => s + i.quantity, 0);
+        updateCartBadge(total);
     } catch (e) {
         showAlert(e.message, 'danger');
         await renderCart();
@@ -208,6 +213,8 @@ async function removeItem(productId) {
         if (!res.ok) throw new Error(`Lỗi ${res.status}`);
         cartData = await res.json();
         await renderCart();  // U-05: cập nhật ngay sau khi xóa
+        const total = (cartData?.items || []).reduce((s, i) => s + i.quantity, 0);
+        updateCartBadge(total);
     } catch (e) {
         showAlert(e.message, 'danger');
     }

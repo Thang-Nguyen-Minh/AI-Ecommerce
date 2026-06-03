@@ -432,7 +432,7 @@ function checkAuth() {
 
 /**
  * Render link đăng nhập/đăng xuất vào phần tử có id navAuthLinks.
- * Dùng trên các trang công khai (products, product-detail, index).
+ * Dùng trên các trang công khai (products, product-detail, index, cart).
  */
 function renderNavAuth() {
     const el = document.getElementById('navAuthLinks');
@@ -450,6 +450,32 @@ function renderNavAuth() {
             <li class="nav-item"><a class="nav-link" href="/login.html"><i class="fas fa-sign-in-alt me-1"></i>Đăng nhập</a></li>
         `;
     }
+}
+
+/**
+ * Cập nhật badge số lượng trên icon giỏ hàng trong navbar.
+ * U-01: gọi sau mỗi lần thêm/xóa/sửa giỏ.
+ * @param {number|null} count - số item, null = không hiện badge
+ */
+async function updateCartBadge(count = null) {
+    // Nếu không truyền count, fetch từ cart-service
+    if (count === null && api.isLoggedIn()) {
+        try {
+            const cart = await api.getCart();
+            count = (cart?.items || []).reduce((s, i) => s + i.quantity, 0);
+        } catch {
+            count = 0;
+        }
+    }
+
+    document.querySelectorAll('.cart-badge').forEach(el => {
+        if (count && count > 0) {
+            el.textContent = count > 99 ? '99+' : count;
+            el.style.display = 'inline-flex';
+        } else {
+            el.style.display = 'none';
+        }
+    });
 }
 
 // Export for use in other scripts
