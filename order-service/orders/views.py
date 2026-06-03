@@ -35,7 +35,9 @@ def create_order(request):
     if not shipping_address:
         return Response({'error': 'shipping_address là bắt buộc'}, status=400)
 
-    raw_token = request.auth  # validated JWT token object
+    # Cờ test sandbox (vd "fail") để kiểm chứng TC-09; production payment bỏ qua.
+    simulate = request.data.get('simulate')
+
     # Lấy chuỗi token gốc từ header để forward sang cart
     auth_header = request.META.get('HTTP_AUTHORIZATION', '')
     token_str = auth_header.removeprefix('Bearer ').strip()
@@ -83,38 +85,46 @@ def create_order(request):
     logger.info(f"[ORDER] Created order={order.id} user={request.user.id} total={total}")
 
     # ── Điều phối payment (BR-5, BR-7) ───────────────
-    payment_error = None
     try:
-        payment_result = call_payment(order.id, total, token_str)
-        payment_status = payment_result.get('status', '').upper()
-        if payment_status == 'SUCCESS':
-            order.status = 'PAID'
-            order.save()
-            # ── Shipping chỉ khi payment thành công (BR-5) ──
-            try:
-                call_shipping(order.id, shipping_address, token_str)
-                order.status = 'SHIPPED'
-                order.save()
-            except ServiceError as e:
-                logger.warning(f"[ORDER] Shipping error order={order.id}: {e}")
-            # Dọn giỏ khi đơn hoàn tất (TC-11)
-            clear_cart(token_str)
-        else:
-            # Payment trả FAILED — BR-5: không gọi shipping
-            order.status = 'PAYMENT_FAILED'
-            order.save()
-            payment_error = 'Thanh toán thất bại'
+        payment_result = call_payment(order.id, total, token_str, simulate=simulate)
     except ServiceError as e:
-        # BR-7: payment không phản hồi → PAYMENT_FAILED, không gọi shipping
+        # BR-7: payment KHÔNG phản hồi (sập/timeout) → 503, đơn PAYMENT_FAILED,
+        #       tuyệt đối không gọi shipping. Giỏ KHÔNG bị dọn để user thử lại.
         order.status = 'PAYMENT_FAILED'
         order.save()
-        payment_error = str(e)
-        logger.warning(f"[ORDER] Payment service error order={order.id}: {e}")
+        logger.warning(f"[ORDER] Payment unreachable order={order.id}: {e}")
+        return Response(
+            {'error': str(e), 'order': OrderSerializer(order).data},
+            status=503,
+        )
 
-    resp = OrderSerializer(order).data
-    if payment_error:
-        resp['payment_error'] = payment_error  # thêm ghi chú, HTTP vẫn 201
-    return Response(resp, status=status.HTTP_201_CREATED)
+    payment_status = payment_result.get('status', '').upper()
+
+    if payment_status != 'SUCCESS':
+        # Payment phản hồi nhưng từ chối (BR-5): không gọi shipping.
+        order.status = 'PAYMENT_FAILED'
+        order.save()
+        resp = OrderSerializer(order).data
+        resp['payment_error'] = 'Thanh toán thất bại'
+        return Response(resp, status=status.HTTP_201_CREATED)
+
+    # Payment thành công → PAID
+    order.status = 'PAID'
+    order.save()
+
+    # ── Shipping chỉ khi payment thành công (BR-5) ──
+    # Shipping-service chưa dựng → ServiceError → đơn giữ ở PAID (không nửa vời).
+    try:
+        call_shipping(order.id, shipping_address, token_str)
+        order.status = 'SHIPPED'
+        order.save()
+    except ServiceError as e:
+        logger.warning(f"[ORDER] Shipping chưa sẵn sàng order={order.id}: {e}")
+
+    # Dọn giỏ khi đã thanh toán xong (TC-11: tránh đặt/charge trùng)
+    clear_cart(token_str)
+
+    return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
 
 
 def list_orders(request):

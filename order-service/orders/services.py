@@ -57,17 +57,17 @@ def get_product(product_id: int) -> dict:
     return r.json()
 
 
-def call_payment(order_id: int, amount, token: str) -> dict:
+def call_payment(order_id: int, amount, token: str, simulate=None) -> dict:
     """
-    Gọi payment-service. BR-5.
-    Trả về dict với 'status' = 'SUCCESS' | 'FAILED'.
-    Khi payment-service chưa dựng → ServiceError(503).
+    Gọi payment-service /payment/pay. BR-5.
+    Trả về dict có 'status' = 'Success' | 'Failed' | 'Pending'.
+    simulate: chuyển tiếp cờ test xuống payment sandbox (vd 'fail').
+    Khi payment-service không phản hồi → ServiceError(503).
     """
-    r = _post(
-        f"{PAYMENT_SERVICE_URL}/payments/",
-        {'order_id': order_id, 'amount': str(amount)},
-        headers={'Authorization': f'Bearer {token}'},
-    )
+    payload = {'order_id': order_id, 'amount': str(amount)}
+    if simulate:
+        payload['simulate'] = simulate
+    r = _post(f"{PAYMENT_SERVICE_URL}/payment/pay", payload)
     if not r.ok:
         raise ServiceError(f"payment-service lỗi ({r.status_code})", r.status_code)
     return r.json()
