@@ -75,12 +75,11 @@ def call_payment(order_id: int, amount, token: str, simulate=None) -> dict:
 
 def call_shipping(order_id: int, shipping_address: str, token: str) -> dict:
     """
-    Gọi shipping-service. Chỉ gọi sau khi payment thành công (BR-5).
+    Gọi shipping-service /shipping/create. Chỉ gọi sau khi payment thành công (BR-5).
     """
     r = _post(
-        f"{SHIPPING_SERVICE_URL}/shipments/",
-        {'order_id': order_id, 'shipping_address': shipping_address},
-        headers={'Authorization': f'Bearer {token}'},
+        f"{SHIPPING_SERVICE_URL}/shipping/create",
+        {'order_id': order_id, 'address': shipping_address},
     )
     if not r.ok:
         raise ServiceError(f"shipping-service lỗi ({r.status_code})", r.status_code)
