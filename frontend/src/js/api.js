@@ -259,21 +259,59 @@ class APIClient {
         });
     }
 
-    // CART ENDPOINTS
+    // CART ENDPOINTS (cart-service: port 8003)
+    _cartFetch(path, options = {}) {
+        const url = `http://localhost:8003${path}`;
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), 10000);
+        return fetch(url, { ...options, signal: ctrl.signal })
+            .finally(() => clearTimeout(tid));
+    }
+
+    _cartHeaders() {
+        return { 'Content-Type': 'application/json', 'Authorization': `Bearer ${this.getToken()}` };
+    }
+
     async getCart() {
-        return this.get('/cart/');
+        const res = await this._cartFetch('/cart/', { headers: this._cartHeaders() });
+        if (!res.ok) throw new Error(`Lỗi ${res.status}`);
+        return res.json();
     }
 
     async addToCart(productId, quantity = 1) {
-        return this.post('/cart/items/', { product_id: productId, quantity });
+        const res = await this._cartFetch('/cart/add', {
+            method: 'POST',
+            headers: this._cartHeaders(),
+            body: JSON.stringify({ product_id: productId, quantity }),
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || `Lỗi ${res.status}`);
+        }
+        return res.json();
     }
 
-    async updateCartItem(itemId, quantity) {
-        return this.put(`/cart/items/${itemId}/`, { quantity });
+    async updateCartItem(productId, quantity) {
+        const res = await this._cartFetch('/cart/update', {
+            method: 'PATCH',
+            headers: this._cartHeaders(),
+            body: JSON.stringify({ product_id: productId, quantity }),
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            throw new Error(err.error || `Lỗi ${res.status}`);
+        }
+        return res.json();
     }
 
-    async removeFromCart(itemId) {
-        return this.delete(`/cart/items/${itemId}/`);
+    async removeFromCart(productId) {
+        const res = await this._cartFetch('/cart/remove', {
+            method: 'DELETE',
+            headers: this._cartHeaders(),
+            body: JSON.stringify({ product_id: productId }),
+        });
+        if (!res.ok) throw new Error(`Lỗi ${res.status}`);
+        return res.json();
     }
 
     // ORDER ENDPOINTS
