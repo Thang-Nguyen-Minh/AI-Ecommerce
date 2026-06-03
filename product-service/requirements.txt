@@ -1,0 +1,4 @@
+# Đã có trong base: Django, DRF, simplejwt, mysqlclient, corsheaders
+# Thêm đặc thù cho product-service:
+Pillow==10.3.0
+django-filter==24.2
