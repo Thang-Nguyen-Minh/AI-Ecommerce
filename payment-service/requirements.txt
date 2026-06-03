@@ -1,0 +1,1 @@
+# Base image chứa đủ - không thêm thư viện nào
