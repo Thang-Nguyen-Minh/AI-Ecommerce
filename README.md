@@ -43,10 +43,10 @@ Browser / Client          │            Nginx Gateway             │  :80
 |------------------|----------------|------------|-------|----------|
 | user-service     | Django + DRF   | MySQL      | 8001  | ✅ Done  |
 | product-service  | Django + DRF   | PostgreSQL | 8002  | ✅ Done  |
-| cart-service     | Django + DRF   | MySQL      | 8003  | 🔧 WIP   |
-| order-service    | Django + DRF   | PostgreSQL | 8004  | 🔧 WIP   |
-| payment-service  | Django + DRF   | MySQL      | 8005  | 🔧 WIP   |
-| shipping-service | Django + DRF   | MySQL      | 8006  | 🔧 WIP   |
+| cart-service     | Django + DRF   | MySQL      | 8003  | ✅ Done  |
+| order-service    | Django + DRF   | PostgreSQL | 8004  | ✅ Done  |
+| payment-service  | Django + DRF   | MySQL      | 8005  | ✅ Done  |
+| shipping-service | Django + DRF   | MySQL      | 8006  | ✅ Done  |
 | ai-service       | FastAPI        | Neo4j      | 8007  | 🔧 WIP   |
 | frontend         | HTML/JS/Bootstrap | —       | 80    | ✅ Done  |
 | gateway          | Nginx          | —          | 80    | ✅ Done  |
@@ -175,6 +175,22 @@ curl http://localhost:8002/products/
 # Tạo dữ liệu demo
 curl -X POST http://localhost:8002/products/seed-demo/
 ```
+
+---
+
+## Kiểm thử đầu-cuối
+
+Khi cả 6 service đang chạy, chạy script kiểm thử toàn hệ thống (chứng minh luồng tài liệu 4.7.2):
+
+```bash
+bash test-e2e.sh
+```
+
+Script kiểm chứng 2 kịch bản:
+- **Happy path**: login → giỏ → đơn → payment Success → shipment → staff đẩy Delivered (đơn `SHIPPED`)
+- **Fail path**: `simulate:"fail"` → payment Failed → đơn `PAYMENT_FAILED` → **không** có shipment (404)
+
+Mỗi service còn có test case riêng trong `*/contract_*.md` (mục 5) — chạy được bằng `curl` không cần đọc code.
 
 ---
 
