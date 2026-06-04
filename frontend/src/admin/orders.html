@@ -44,7 +44,8 @@
             <div class="card-body">
                 <label class="form-label">Mã đơn hàng (order_id)</label>
                 <div class="input-group">
-                    <input type="number" id="orderIdInput" class="form-control" placeholder="VD: 12" min="1">
+                    <input type="number" id="orderIdInput" class="form-control" placeholder="VD: 12" min="1"
+                           onkeydown="if(event.key==='Enter'){event.preventDefault();lookup();}">
                     <button class="btn btn-primary" onclick="lookup()"><i class="fas fa-search me-1"></i>Tra cứu</button>
                 </div>
             </div>

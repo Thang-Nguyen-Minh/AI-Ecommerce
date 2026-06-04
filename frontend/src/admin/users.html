@@ -300,9 +300,9 @@
         }
 
         document.getElementById('usersBody').innerHTML = filtered.map(u => `
-            <tr>
+            <tr style="cursor:pointer" onclick="location.href='customer.html?id=${u.id}'">
                 <td>
-                    <div class="fw-500">${u.email}</div>
+                    <div class="fw-500 text-primary">${u.email}</div>
                     ${u.full_name ? `<div class="text-muted small">${u.full_name}</div>` : ''}
                 </td>
                 <td><span class="badge ${roleBadge[u.role] || ''}">${roleLabel[u.role] || u.role}</span></td>
@@ -312,7 +312,7 @@
                     </span>
                 </td>
                 <td class="small text-muted">${formatDate(u.created_at)}</td>
-                <td class="text-end">
+                <td class="text-end" onclick="event.stopPropagation()">
                     <a class="btn btn-sm btn-outline-primary me-1" href="customer.html?id=${u.id}" title="Xem chi tiết & đơn hàng">
                         <i class="fas fa-box-open"></i>
                     </a>
