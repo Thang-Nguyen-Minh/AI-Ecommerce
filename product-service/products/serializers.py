@@ -116,12 +116,12 @@ class ProductCreateUpdateSerializer(serializers.ModelSerializer):
 
     def validate_price(self, value):
         if value <= 0:
-            raise serializers.ValidationError("price phải lớn hơn 0.")  # BR-2
+            raise serializers.ValidationError("phải lớn hơn 0.")  # BR-2
         return value
 
     def validate_stock(self, value):
         if value < 0:
-            raise serializers.ValidationError("stock không được âm.")  # BR-1
+            raise serializers.ValidationError("không được âm.")  # BR-1
         return value
 
     def validate(self, attrs):
