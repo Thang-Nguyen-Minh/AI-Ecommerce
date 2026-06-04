@@ -10,6 +10,57 @@ const TOKEN_KEY = 'access_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
 const USER_KEY = 'user';
 
+// ── Dịch lỗi backend (DRF) thành thông báo dễ hiểu ──────────────
+const FIELD_LABELS = {
+    email: 'Email', password: 'Mật khẩu', username: 'Tên đăng nhập',
+    full_name: 'Họ tên', phone: 'Số điện thoại', name: 'Tên sản phẩm',
+    price: 'Giá', stock: 'Tồn kho', category_id: 'Danh mục',
+    old_password: 'Mật khẩu cũ', new_password: 'Mật khẩu mới',
+    new_password2: 'Xác nhận mật khẩu', address: 'Địa chỉ',
+    quantity: 'Số lượng', product_id: 'Sản phẩm', role: 'Vai trò',
+    shipping_address: 'Địa chỉ giao hàng', status: 'Trạng thái',
+};
+
+// Dịch một số message tiếng Anh thường gặp của DRF sang tiếng Việt
+function translateMsg(msg) {
+    const m = String(msg);
+    if (/at least 8 characters/i.test(m)) return 'phải có ít nhất 8 ký tự.';
+    if (/at least (\d+) characters/i.test(m)) return m.replace(/.*at least (\d+) characters.*/i, 'phải có ít nhất $1 ký tự.');
+    if (/This field may not be blank/i.test(m)) return 'không được để trống.';
+    if (/This field is required/i.test(m)) return 'là bắt buộc.';
+    if (/Enter a valid email/i.test(m)) return 'không hợp lệ.';
+    if (/already exists/i.test(m)) return 'đã tồn tại.';
+    if (/Ensure this value is greater than or equal to 0/i.test(m)) return 'không được âm.';
+    if (/A valid (number|integer) is required/i.test(m)) return 'phải là số hợp lệ.';
+    return m;
+}
+
+/**
+ * Chuyển response lỗi của backend thành 1 chuỗi thông báo có nghĩa.
+ * Hỗ trợ: {detail}, {error}, {non_field_errors:[]}, và field errors {field:[...]}.
+ */
+function parseApiError(data, status) {
+    if (!data || typeof data !== 'object') return `Đã xảy ra lỗi (mã ${status}).`;
+    if (typeof data.detail === 'string') return data.detail;
+    if (typeof data.error === 'string') return data.error;
+    if (Array.isArray(data.non_field_errors)) return data.non_field_errors.map(translateMsg).join(' ');
+
+    const parts = [];
+    for (const [key, val] of Object.entries(data)) {
+        if (key === 'detail' || key === 'error') continue;
+        const label = FIELD_LABELS[key] || key;
+        let msg;
+        if (Array.isArray(val)) msg = val.map(translateMsg).join(' ');
+        else if (val && typeof val === 'object') msg = JSON.stringify(val);
+        else msg = translateMsg(val);
+        // Tránh lặp nhãn nếu message đã tự chứa tên trường (vd "Mật khẩu phải...")
+        if (msg.toLowerCase().startsWith(label.toLowerCase())) parts.push(msg);
+        else parts.push(`${label}: ${msg}`);
+    }
+    return parts.length ? parts.join('\n') : `Đã xảy ra lỗi (mã ${status}).`;
+}
+window.parseApiError = parseApiError;
+
 class APIClient {
     constructor(baseURL = API_BASE_URL) {
         this.baseURL = baseURL;
@@ -44,14 +95,15 @@ class APIClient {
             });
             
             clearTimeout(timeoutId);
-            
-            // Handle 401 - redirect to login
-            if (response.status === 401) {
+
+            // Token hết hạn trên trang cần đăng nhập → về login.
+            // KHÔNG áp dụng cho endpoint /auth/ (login sai mật khẩu phải hiện lỗi, không reload).
+            if (response.status === 401 && !endpoint.includes('/auth/') && this.getToken()) {
                 this.logout();
                 window.location.href = '/login.html';
                 return null;
             }
-            
+
             return response;
         } catch (error) {
             clearTimeout(timeoutId);
@@ -70,11 +122,12 @@ class APIClient {
         });
         
         if (!response) return null;
-        
+
         if (!response.ok) {
-            throw new Error(`GET ${endpoint} failed: ${response.status}`);
+            const data = await response.json().catch(() => ({}));
+            throw new Error(parseApiError(data, response.status));
         }
-        
+
         return response.json();
     }
 
@@ -85,14 +138,14 @@ class APIClient {
             headers: this.getHeaders(),
             body: JSON.stringify(data),
         });
-        
+
         if (!response) return null;
-        
+
         if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw new Error(error.detail || `POST ${endpoint} failed: ${response.status}`);
+            const err = await response.json().catch(() => ({}));
+            throw new Error(parseApiError(err, response.status));
         }
-        
+
         return response.json();
     }
 
@@ -103,14 +156,14 @@ class APIClient {
             headers: this.getHeaders(),
             body: JSON.stringify(data),
         });
-        
+
         if (!response) return null;
-        
+
         if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw new Error(error.detail || `PUT ${endpoint} failed: ${response.status}`);
+            const err = await response.json().catch(() => ({}));
+            throw new Error(parseApiError(err, response.status));
         }
-        
+
         return response.json();
     }
 
@@ -120,13 +173,14 @@ class APIClient {
             method: 'DELETE',
             headers: this.getHeaders(),
         });
-        
+
         if (!response) return null;
-        
+
         if (!response.ok) {
-            throw new Error(`DELETE ${endpoint} failed: ${response.status}`);
+            const data = await response.json().catch(() => ({}));
+            throw new Error(parseApiError(data, response.status));
         }
-        
+
         return response.status === 204 ? null : response.json();
     }
 
@@ -286,7 +340,7 @@ class APIClient {
         });
         if (!res.ok) {
             const err = await res.json().catch(() => ({}));
-            throw new Error(err.error || `Lỗi ${res.status}`);
+            throw new Error(parseApiError(err, res.status));
         }
         return res.json();
     }
@@ -299,7 +353,7 @@ class APIClient {
         });
         if (!res.ok) {
             const err = await res.json().catch(() => ({}));
-            throw new Error(err.error || `Lỗi ${res.status}`);
+            throw new Error(parseApiError(err, res.status));
         }
         return res.json();
     }
@@ -334,7 +388,7 @@ class APIClient {
             body: JSON.stringify({ shipping_address: shippingAddress }),
         });
         const data = await res.json();
-        if (!res.ok && !data.id) throw new Error(data.error || `Lỗi ${res.status}`);
+        if (!res.ok && !data.id) throw new Error(parseApiError(data, res.status));
         return data;
     }
 

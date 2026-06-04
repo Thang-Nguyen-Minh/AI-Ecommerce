@@ -310,6 +310,7 @@
     // ── Products ─────────────────────────────────────────
     let prodPage = 1, prodHasNext = false, prodHasPrev = false;
     let allCats = [];
+    let allProducts = [];
 
     async function loadProducts(page = 1) {
         prodPage = page;
@@ -328,6 +329,7 @@
             const res = await fetch(`${PROD_URL}/products/?${params}`, { headers });
             const data = await res.json();
             const results = data.results || data;
+            allProducts = results;
             const count = data.count || results.length;
             prodHasNext = !!data.next;
             prodHasPrev = !!data.previous;
@@ -353,7 +355,7 @@
                     <td>${p.is_active ? '<span class="badge bg-success">Hiển thị</span>' : '<span class="badge bg-secondary">Ẩn</span>'}</td>
                     <td class="text-end">
                         <button class="btn btn-sm btn-outline-secondary me-1" onclick="editProduct(${p.id})"><i class="fas fa-pen"></i></button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct(${p.id},'${p.name.replace(/'/g,'\\\')}')"><i class="fas fa-trash"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct(${p.id})"><i class="fas fa-trash"></i></button>
                     </td>
                 </tr>`).join('');
         } catch(e) {
@@ -472,7 +474,7 @@
                 body: JSON.stringify(body),
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(JSON.stringify(data));
+            if (!res.ok) throw new Error(parseApiError(data, res.status));
             bootstrap.Modal.getInstance(document.getElementById('modalProduct')).hide();
             await loadProducts(prodPage);
             showPageAlert(id ? 'Đã cập nhật sản phẩm!' : 'Đã thêm sản phẩm mới!', 'success');
@@ -483,7 +485,9 @@
         }
     }
 
-    async function deleteProduct(id, name) {
+    async function deleteProduct(id) {
+        const p = allProducts.find(x => x.id === id);
+        const name = p ? p.name : `#${id}`;
         if (!confirm(`Xóa sản phẩm "${name}"?`)) return;
         try {
             const res = await fetch(`${PROD_URL}/products/${id}/`, {
@@ -555,7 +559,7 @@
                 body: JSON.stringify(body),
             });
             const data = await res.json();
-            if (!res.ok) throw new Error(JSON.stringify(data));
+            if (!res.ok) throw new Error(parseApiError(data, res.status));
             bootstrap.Modal.getInstance(document.getElementById('modalCategory')).hide();
             await loadCategories();
             await loadCatOptions();
