@@ -48,9 +48,18 @@ class RegisterSerializer(serializers.Serializer):
             'min_length': 'Mật khẩu phải có ít nhất 8 ký tự',
         },
     )
-    full_name = serializers.CharField(max_length=200, required=False, default='')
-    phone = serializers.CharField(max_length=20, required=False, allow_blank=True, default='')
-    occupation = serializers.CharField(max_length=120, required=False, allow_blank=True, default='')
+    full_name = serializers.CharField(
+        max_length=200, required=True,
+        error_messages={'required': 'Họ tên là bắt buộc', 'blank': 'Họ tên không được để trống'},
+    )
+    phone = serializers.CharField(
+        max_length=20, required=True,
+        error_messages={'required': 'Số điện thoại là bắt buộc', 'blank': 'Số điện thoại không được để trống'},
+    )
+    occupation = serializers.CharField(
+        max_length=120, required=True,
+        error_messages={'required': 'Nghề nghiệp là bắt buộc', 'blank': 'Nghề nghiệp không được để trống'},
+    )
     address = serializers.CharField(required=False, allow_blank=True, default='')
 
     def validate_email(self, value):
@@ -61,6 +70,12 @@ class RegisterSerializer(serializers.Serializer):
         except DjangoValidationError:
             raise serializers.ValidationError('Email không hợp lệ')
         return value.lower()
+
+    def validate_phone(self, value):
+        # SĐT mỗi khách phải khác nhau (không tính chuỗi rỗng của tài khoản cũ)
+        if value and User.objects.filter(phone=value).exists():
+            raise serializers.ValidationError('Số điện thoại đã được sử dụng')
+        return value
 
     def create(self, validated_data):
         email = validated_data['email']
