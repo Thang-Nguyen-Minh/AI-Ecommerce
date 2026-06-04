@@ -31,9 +31,20 @@
                 <input type="email" id="email" class="form-control" placeholder="Nhập email của bạn" required>
             </div>
 
-            <div class="mb-4">
+            <div class="mb-3">
                 <label class="form-label">Mật khẩu</label>
                 <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Số điện thoại</label>
+                <input type="tel" id="phone" class="form-control" placeholder="VD: 0912345678">
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label">Địa chỉ giao hàng</label>
+                <input type="text" id="address" class="form-control" placeholder="Số nhà, đường, phường, quận, tỉnh/thành">
+                <div class="form-text">Không bắt buộc — có thể thêm sau trong Hồ sơ.</div>
             </div>
 
             <button type="submit" class="btn btn-primary-custom text-white w-100 py-2 mb-3" id="btnRegister">
@@ -62,20 +73,19 @@
         const fullName = document.getElementById('fullName').value;
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
+        const phone = document.getElementById('phone').value.trim();
+        const address = document.getElementById('address').value.trim();
 
         showLoading('btnRegister');
 
         try {
-            const result = await api.register(email, fullName, password);
+            const result = await api.register(email, fullName, password, phone, address);
             if (result) {
-                showAlert('Đăng ký thành công! Đang đăng nhập...', 'success');
-                // Tự login sau register để lấy token
-                const loginResult = await api.login(email, password);
-                if (loginResult) {
-                    setTimeout(() => {
-                        window.location.href = '/profile.html';
-                    }, 1000);
-                }
+                // #3: KHÔNG tự đăng nhập — chuyển sang trang đăng nhập kèm thông báo
+                showAlert('Đăng ký thành công! Vui lòng đăng nhập.', 'success');
+                setTimeout(() => {
+                    window.location.href = '/login.html?registered=1';
+                }, 1200);
             }
         } catch (error) {
             showAlert(error.message || 'Đăng ký thất bại', 'danger');

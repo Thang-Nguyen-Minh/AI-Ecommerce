@@ -51,6 +51,11 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="js/api.js"></script>
 <script>
+    // #3: vừa đăng ký xong → nhắc đăng nhập
+    if (new URLSearchParams(location.search).get('registered') === '1') {
+        showAlert('Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.', 'success');
+    }
+
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
