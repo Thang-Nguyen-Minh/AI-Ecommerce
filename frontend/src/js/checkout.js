@@ -148,5 +148,22 @@ function showAlert(html, type) {
     el.innerHTML = html;
 }
 
+// #1: điền sẵn địa chỉ mặc định của khách (vẫn cho sửa)
+async function prefillAddress() {
+    try {
+        const profile = await api.getProfile();
+        const addrs = profile.addresses || [];
+        const def = addrs.find(a => a.is_default) || addrs[0];
+        if (def) {
+            const parts = [def.street, def.ward, def.district, def.city].filter(Boolean);
+            const box = document.getElementById('shippingAddress');
+            if (box && !box.value.trim()) box.value = parts.join(', ');
+        }
+    } catch { /* không có địa chỉ cũng không sao */ }
+}
+
 document.getElementById('checkoutForm').addEventListener('submit', placeOrder);
-document.addEventListener('DOMContentLoaded', loadCart);
+document.addEventListener('DOMContentLoaded', () => {
+    loadCart();
+    prefillAddress();
+});
