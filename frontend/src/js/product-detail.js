@@ -171,6 +171,7 @@ async function loadProductDetail() {
         });
 
         renderProductDetail(product);
+        api.aiTrackEvent(product.id, 'view');  // ghi hành vi xem → knowledge graph
     } catch (error) {
         productDetailEl.innerHTML = `
             <div class="col-12">

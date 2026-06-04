@@ -409,6 +409,35 @@ class APIClient {
         return this.post('/payments/', { order_id: orderId, payment_method: paymentMethod });
     }
 
+    // AI ENDPOINTS (ai-service: port 8007)
+    async aiRecommend(n = 6) {
+        const res = await fetch(`http://localhost:8007/recommend?n=${n}`, {
+            headers: { Authorization: `Bearer ${this.getToken()}` },
+        });
+        if (!res.ok) throw new Error(`Lỗi ${res.status}`);
+        return res.json();
+    }
+
+    async aiChat(message) {
+        const res = await fetch('http://localhost:8007/chatbot', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${this.getToken()}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message }),
+        });
+        if (!res.ok) throw new Error(`Lỗi ${res.status}`);
+        return res.json();
+    }
+
+    // Ghi nhận hành vi (fire-and-forget) — nuôi knowledge graph
+    aiTrackEvent(productId, action) {
+        if (!this.isLoggedIn()) return;
+        fetch('http://localhost:8007/events', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${this.getToken()}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ product_id: productId, action }),
+        }).catch(() => {});
+    }
+
     // ADMIN — USER MANAGEMENT
     async adminGetUsers() {
         return this.get('/users/');

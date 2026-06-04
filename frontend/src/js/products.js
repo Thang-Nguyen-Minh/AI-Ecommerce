@@ -236,6 +236,7 @@ async function handleAddToCart(productId) {
 
     try {
         await api.addToCart(productId, 1);
+        api.aiTrackEvent(productId, 'add_to_cart');  // nuôi knowledge graph
         showAlert('Đã thêm sản phẩm vào giỏ hàng!', 'success');
         updateCartBadge();  // U-01: tăng số badge
     } catch (error) {
@@ -296,9 +297,31 @@ nextPageBtnEl.addEventListener('click', () => {
 });
 seedDemoBtnEl.addEventListener('click', seedDemoProducts);
 
+// ── Gợi ý cá nhân hoá (ai-service) — U-01/U-03 ────────
+async function loadRecommendations() {
+    if (!api.isLoggedIn()) return;  // khách chưa đăng nhập: bỏ qua khối gợi ý
+    const section = document.getElementById('aiRecommendSection');
+    const list = document.getElementById('aiRecommendList');
+    try {
+        const data = await api.aiRecommend(4);
+        const ids = (data.items || []).map(i => i.product_id);
+        if (!ids.length) return;
+        // Lấy chi tiết sản phẩm để render card
+        const products = await Promise.all(ids.map(id => api.getProduct(id).catch(() => null)));
+        const valid = products.filter(Boolean);
+        if (!valid.length) return;
+        list.innerHTML = valid.map(renderProductCard).join('');
+        section.classList.remove('d-none');  // U-06: chỉ hiện khi có dữ liệu
+    } catch (e) {
+        // U-06: ai-service chết → ẩn khối, trang không vỡ
+        console.warn('Không tải được gợi ý:', e.message);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     await loadCategories();
     await loadStats();
     await loadProducts(1);
     updateCartBadge();  // U-01: hiện badge ngay khi vào trang
+    loadRecommendations();
 });
