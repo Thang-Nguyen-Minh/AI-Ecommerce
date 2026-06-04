@@ -41,6 +41,11 @@
                 <input type="tel" id="phone" class="form-control" placeholder="VD: 0912345678">
             </div>
 
+            <div class="mb-3">
+                <label class="form-label">Nghề nghiệp</label>
+                <input type="text" id="occupation" class="form-control" placeholder="VD: Sinh viên, Kỹ sư, Giáo viên...">
+            </div>
+
             <div class="mb-4">
                 <label class="form-label">Địa chỉ giao hàng</label>
                 <input type="text" id="address" class="form-control" placeholder="Số nhà, đường, phường, quận, tỉnh/thành">
@@ -74,12 +79,13 @@
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         const phone = document.getElementById('phone').value.trim();
+        const occupation = document.getElementById('occupation').value.trim();
         const address = document.getElementById('address').value.trim();
 
         showLoading('btnRegister');
 
         try {
-            const result = await api.register(email, fullName, password, phone, address);
+            const result = await api.register(email, fullName, password, phone, address, occupation);
             if (result) {
                 // #3: KHÔNG tự đăng nhập — chuyển sang trang đăng nhập kèm thông báo
                 showAlert('Đăng ký thành công! Vui lòng đăng nhập.', 'success');

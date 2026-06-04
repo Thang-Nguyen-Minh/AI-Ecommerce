@@ -185,13 +185,14 @@ class APIClient {
     }
 
     // AUTH ENDPOINTS
-    async register(email, fullName, password, phone = '', address = '') {
+    async register(email, fullName, password, phone = '', address = '', occupation = '') {
         return this.post('/auth/register/', {
             email,
             full_name: fullName,
             password,
             phone,
             address,
+            occupation,
         });
     }
 
@@ -264,10 +265,11 @@ class APIClient {
         return this.get('/users/me/');
     }
 
-    async updateProfile(fullName, phone = null, avatar = null) {
+    async updateProfile(fullName, phone = null, avatar = null, occupation = null) {
         const data = { full_name: fullName };
         if (phone) data.phone = phone;
         if (avatar) data.avatar = avatar;
+        if (occupation !== null) data.occupation = occupation;
         return this.put('/users/me/', data);
     }
 
