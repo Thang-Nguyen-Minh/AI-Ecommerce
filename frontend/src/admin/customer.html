@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi tiết khách hàng — Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+    <style>
+        .sidebar { min-height: 100vh; background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%); }
+        .sidebar .nav-link { color: rgba(255,255,255,.75); border-radius: 8px; margin-bottom: 2px; }
+        .sidebar .nav-link:hover, .sidebar .nav-link.active { background: rgba(255,255,255,.15); color: #fff; }
+        .sidebar .nav-link i { width: 20px; }
+        .step { width: 34px; height: 34px; }
+        .stat-mini { border: none; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-light">
+<div class="d-flex">
+    <div class="sidebar d-flex flex-column p-3" style="width:230px;flex-shrink:0">
+        <a href="/" class="text-white text-decoration-none mb-4 ps-2">
+            <i class="fas fa-shopping-bag me-2"></i><strong>ecom-final</strong>
+            <div class="small text-muted mt-1">Bảng quản trị</div>
+        </a>
+        <nav class="nav flex-column gap-1">
+            <a href="dashboard.html" class="nav-link"><i class="fas fa-chart-bar me-2"></i>Tổng quan</a>
+            <a href="users.html"     class="nav-link active"><i class="fas fa-users me-2"></i>Người dùng</a>
+            <a href="products.html"  class="nav-link"><i class="fas fa-box me-2"></i>Sản phẩm</a>
+            <a href="orders.html"    class="nav-link"><i class="fas fa-truck me-2"></i>Giao hàng</a>
+        </nav>
+        <div class="mt-auto pt-3 border-top border-secondary">
+            <div class="small text-muted mb-2" id="sidebarUser"></div>
+            <a href="#" class="nav-link" onclick="doLogout();return false;"><i class="fas fa-sign-out-alt me-2"></i>Đăng xuất</a>
+        </div>
+    </div>
+
+    <div class="flex-grow-1 p-4">
+        <a href="users.html" class="btn btn-sm btn-outline-secondary mb-3"><i class="fas fa-arrow-left me-1"></i>Danh sách người dùng</a>
+        <div id="pageAlert" class="alert d-none mb-3"></div>
+
+        <div class="row g-4">
+            <!-- Thông tin khách -->
+            <div class="col-lg-4">
+                <div class="card shadow-sm" id="profileCard">
+                    <div class="card-body text-center py-4"><div class="spinner-border text-primary"></div></div>
+                </div>
+            </div>
+
+            <!-- Lịch sử đơn -->
+            <div class="col-lg-8">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold mb-0"><i class="fas fa-receipt me-2 text-primary"></i>Lịch sử đơn hàng</h5>
+                    <span class="text-muted small" id="orderCount"></span>
+                </div>
+                <div id="ordersArea"><div class="text-center py-4"><div class="spinner-border text-primary"></div></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="../js/api.js"></script>
+<script>
+    const ORDER_URL = 'http://localhost:8004';
+    const SHIPPING_URL = 'http://localhost:8006';
+    const PROD_URL = window.PRODUCT_API_URL;
+
+    checkAuth();
+    const me = api.getCurrentUser();
+    if (me && me.role !== 'admin' && me.role !== 'staff') window.location.href = '/profile.html';
+    if (me) document.getElementById('sidebarUser').textContent = me.full_name || me.email || '';
+
+    const userId = new URLSearchParams(location.search).get('id');
+    if (!userId) { document.getElementById('ordersArea').innerHTML = '<div class="alert alert-danger">Thiếu id khách hàng.</div>'; }
+
+    const ORDER_STATUS = {
+        PENDING:        { text: 'Chờ thanh toán', cls: 'warning'   },
+        PAID:           { text: 'Đã thanh toán',  cls: 'info'      },
+        SHIPPED:        { text: 'Đang giao',       cls: 'primary'   },
+        DELIVERED:      { text: 'Đã giao',         cls: 'success'   },
+        PAYMENT_FAILED: { text: 'TT thất bại',     cls: 'danger'    },
+        CANCELLED:      { text: 'Đã hủy',          cls: 'secondary' },
+    };
+    const SHIP_STEPS = ['Processing', 'Shipping', 'Delivered'];
+    const SHIP_LABEL = { Processing: 'Đang xử lý', Shipping: 'Đang giao', Delivered: 'Đã giao' };
+    const roleBadge = { admin: 'danger', staff: 'warning', customer: 'primary' };
+
+    let productCache = {};
+    let custName = '', custPhone = '';
+
+    function alertMsg(msg, type) {
+        const el = document.getElementById('pageAlert');
+        el.className = `alert alert-${type}`;
+        el.textContent = msg;
+        if (type === 'success') setTimeout(() => el.className = 'alert d-none', 3000);
+    }
+
+    async function fetchProduct(id) {
+        if (productCache[id]) return productCache[id];
+        try {
+            const r = await fetch(`${PROD_URL}/products/${id}/`);
+            if (r.ok) productCache[id] = await r.json();
+        } catch {}
+        return productCache[id];
+    }
+
+    // ── Thông tin khách ───────────────────────────────────
+    async function loadProfile() {
+        try {
+            const u = await api.adminGetUser(userId);
+            custName = u.full_name || u.email;
+            custPhone = u.phone || '';
+            const addrs = (u.addresses || []).map(a =>
+                [a.street, a.ward, a.district, a.city].filter(Boolean).join(', ')
+            );
+            document.getElementById('profileCard').innerHTML = `
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <div style="font-size:3rem">👤</div>
+                        <h5 class="mt-2 mb-0">${u.full_name || '(Chưa có tên)'}</h5>
+                        <span class="badge bg-${roleBadge[u.role] || 'secondary'} mt-1">${u.role_display || u.role}</span>
+                    </div>
+                    <ul class="list-unstyled small mb-0">
+                        <li class="mb-2"><i class="fas fa-envelope text-muted me-2"></i>${u.email}</li>
+                        <li class="mb-2"><i class="fas fa-phone text-muted me-2"></i>${u.phone || '<span class="text-muted">Chưa có SĐT</span>'}</li>
+                        <li class="mb-2"><i class="fas fa-briefcase text-muted me-2"></i>${u.occupation || '<span class="text-muted">Chưa có nghề nghiệp</span>'}</li>
+                        <li class="mb-2"><i class="fas fa-calendar text-muted me-2"></i>Tham gia: ${formatDate(u.created_at)}</li>
+                    </ul>
+                    <hr>
+                    <div class="small">
+                        <div class="text-muted mb-1"><i class="fas fa-map-marker-alt me-1"></i>Địa chỉ giao hàng:</div>
+                        ${addrs.length ? addrs.map(a => `<div class="mb-1">• ${a}</div>`).join('') : '<div class="text-muted">Chưa có địa chỉ</div>'}
+                    </div>
+                </div>`;
+        } catch (e) {
+            document.getElementById('profileCard').innerHTML = `<div class="card-body"><div class="alert alert-danger mb-0">${e.message}</div></div>`;
+        }
+    }
+
+    // ── Lịch sử đơn + giao hàng ───────────────────────────
+    async function loadOrders() {
+        try {
+            const res = await fetch(`${ORDER_URL}/orders/?user_id=${userId}`, {
+                headers: { Authorization: `Bearer ${api.getToken()}` },
+            });
+            if (!res.ok) throw new Error(`Lỗi ${res.status}`);
+            const orders = await res.json();
+            document.getElementById('orderCount').textContent = `${orders.length} đơn`;
+
+            if (!orders.length) {
+                document.getElementById('ordersArea').innerHTML = '<p class="text-muted text-center py-4">Khách hàng chưa có đơn hàng nào.</p>';
+                return;
+            }
+
+            // Trạng thái giao hàng cho đơn đã thanh toán
+            const shipMap = {};
+            await Promise.all(orders.filter(o => ['PAID','SHIPPED','DELIVERED'].includes(o.status)).map(async o => {
+                try { const r = await fetch(`${SHIPPING_URL}/shipping/status?order_id=${o.id}`); if (r.ok) shipMap[o.id] = (await r.json()).status; } catch {}
+            }));
+            // Tên sản phẩm
+            const pids = [...new Set(orders.flatMap(o => o.items.map(i => i.product_id)))];
+            await Promise.all(pids.map(fetchProduct));
+
+            document.getElementById('ordersArea').innerHTML = orders.map(o => {
+                const s = ORDER_STATUS[o.status] || { text: o.status, cls: 'secondary' };
+                const items = o.items.map(it => {
+                    const p = productCache[it.product_id];
+                    return `<div class="d-flex justify-content-between small">
+                        <span>${p ? p.name : '#' + it.product_id} × ${it.quantity}</span>
+                        <span>${formatPrice(parseFloat(it.unit_price) * it.quantity)}</span>
+                    </div>`;
+                }).join('');
+
+                let shipUI = '';
+                if (['PAID','SHIPPED','DELIVERED'].includes(o.status)) {
+                    const cur = shipMap[o.id] || 'Processing';
+                    const idx = SHIP_STEPS.indexOf(cur);
+                    const next = SHIP_STEPS[idx + 1];
+                    const tracker = SHIP_STEPS.map((st, i) => `
+                        <div class="text-center flex-fill">
+                            <div class="step rounded-circle mx-auto d-flex align-items-center justify-content-center ${i <= idx ? 'bg-success text-white' : 'bg-light text-muted'}" style="font-size:.8rem">
+                                <i class="fas ${i < idx ? 'fa-check' : 'fa-circle'}"></i>
+                            </div>
+                            <div style="font-size:.7rem" class="mt-1 ${i <= idx ? 'fw-bold' : 'text-muted'}">${SHIP_LABEL[st]}</div>
+                        </div>
+                        ${i < SHIP_STEPS.length - 1 ? '<div class="flex-fill border-top mt-2" style="height:1px"></div>' : ''}`).join('');
+                    shipUI = `
+                        <div class="mt-3 pt-3 border-top">
+                            <div class="d-flex align-items-start justify-content-between mb-2">${tracker}</div>
+                            ${next ? `<button class="btn btn-sm btn-success w-100" onclick="advanceShip(${o.id}, '${next}')"><i class="fas fa-arrow-right me-1"></i>Chuyển sang "${SHIP_LABEL[next]}"</button>`
+                                   : '<div class="text-success small text-center"><i class="fas fa-check-circle me-1"></i>Đã giao hàng xong</div>'}
+                        </div>`;
+                }
+
+                return `
+                    <div class="card shadow-sm mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div><strong>Đơn #${o.id}</strong> <span class="badge bg-${s.cls} ms-1">${s.text}</span>
+                                    <div class="text-muted small mt-1">${formatDate(o.created_at)}</div>
+                                </div>
+                                <div class="fw-bold text-primary">${formatPrice(o.total_price)}</div>
+                            </div>
+                            <!-- Thông tin giao cho shipper -->
+                            <div class="bg-light rounded p-2 small mb-2">
+                                <div><i class="fas fa-user me-1 text-muted"></i><strong>${custName}</strong> · <i class="fas fa-phone me-1 text-muted"></i>${custPhone || 'chưa có SĐT'}</div>
+                                <div><i class="fas fa-map-marker-alt me-1 text-muted"></i>${o.shipping_address}</div>
+                            </div>
+                            ${items}
+                            ${shipUI}
+                        </div>
+                    </div>`;
+            }).join('');
+        } catch (e) {
+            document.getElementById('ordersArea').innerHTML = `<div class="alert alert-danger">${e.message}</div>`;
+        }
+    }
+
+    async function advanceShip(orderId, newStatus) {
+        try {
+            const cr = await fetch(`${SHIPPING_URL}/shipping/create`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order_id: orderId, address: '-' }),
+            });
+            const shipment = await cr.json();
+            const r = await fetch(`${SHIPPING_URL}/shipping/${shipment.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${api.getToken()}` },
+                body: JSON.stringify({ status: newStatus }),
+            });
+            const data = await r.json();
+            if (!r.ok) throw new Error(parseApiError(data, r.status));
+            alertMsg(`Đã cập nhật giao hàng đơn #${orderId} → ${SHIP_LABEL[newStatus]}`, 'success');
+            await loadOrders();
+        } catch (e) { alertMsg(e.message, 'danger'); }
+    }
+
+    async function doLogout() { await api.logout(); window.location.href = '/login.html'; }
+
+    if (userId) { loadProfile(); loadOrders(); }
+</script>
+</body>
+</html>

@@ -225,22 +225,6 @@
     </div>
 </div>
 
-<!-- Modal: Đơn hàng của khách + giao hàng -->
-<div class="modal fade" id="modalCustomerOrders" tabindex="-1">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title"><i class="fas fa-box-open me-2"></i><span id="coTitle">Đơn hàng của khách</span></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div id="coAlert" class="alert d-none mb-3"></div>
-                <div id="coBody"><div class="text-center py-4"><div class="spinner-border text-primary"></div></div></div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="../js/api.js"></script>
 <script>
@@ -329,9 +313,9 @@
                 </td>
                 <td class="small text-muted">${formatDate(u.created_at)}</td>
                 <td class="text-end">
-                    <button class="btn btn-sm btn-outline-primary me-1" onclick="viewCustomerOrders(${u.id})" title="Xem đơn hàng & giao hàng">
+                    <a class="btn btn-sm btn-outline-primary me-1" href="customer.html?id=${u.id}" title="Xem chi tiết & đơn hàng">
                         <i class="fas fa-box-open"></i>
-                    </button>
+                    </a>
                     <button class="btn btn-sm btn-outline-secondary me-1" onclick="openEditUser(${u.id})" title="Sửa">
                         <i class="fas fa-pen"></i>
                     </button>
@@ -417,126 +401,6 @@
             showPageAlert(`Đã ${action} tài khoản!`, 'success');
         } catch (e) {
             showPageAlert(e.message, 'danger');
-        }
-    }
-
-    // ── Đơn hàng của khách + giao hàng ────────────────────
-    const ORDER_URL = 'http://localhost:8004';
-    const SHIPPING_URL = 'http://localhost:8006';
-    const ORDER_STATUS = {
-        PENDING:        { text: 'Chờ thanh toán', cls: 'warning'   },
-        PAID:           { text: 'Đã thanh toán',  cls: 'info'      },
-        SHIPPED:        { text: 'Đang giao',       cls: 'primary'   },
-        DELIVERED:      { text: 'Đã giao',         cls: 'success'   },
-        PAYMENT_FAILED: { text: 'TT thất bại',     cls: 'danger'    },
-        CANCELLED:      { text: 'Đã hủy',          cls: 'secondary' },
-    };
-    const SHIP_STEPS = ['Processing', 'Shipping', 'Delivered'];
-    const SHIP_LABEL = { Processing: 'Đang xử lý', Shipping: 'Đang giao', Delivered: 'Đã giao' };
-
-    let coUser = null;
-
-    async function viewCustomerOrders(userId) {
-        coUser = allUsers.find(u => u.id === userId);
-        document.getElementById('coTitle').textContent =
-            'Đơn hàng — ' + (coUser ? (coUser.full_name || coUser.email) : `user #${userId}`);
-        document.getElementById('coAlert').className = 'alert d-none';
-        document.getElementById('coBody').innerHTML =
-            '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
-        new bootstrap.Modal(document.getElementById('modalCustomerOrders')).show();
-        await renderCustomerOrders(userId);
-    }
-
-    async function renderCustomerOrders(userId) {
-        try {
-            const res = await fetch(`${ORDER_URL}/orders/?user_id=${userId}`, {
-                headers: { Authorization: `Bearer ${api.getToken()}` },
-            });
-            if (!res.ok) throw new Error(`Lỗi ${res.status}`);
-            const orders = await res.json();
-
-            if (!orders.length) {
-                document.getElementById('coBody').innerHTML =
-                    '<p class="text-muted text-center py-4">Khách hàng này chưa có đơn hàng nào.</p>';
-                return;
-            }
-
-            // Lấy trạng thái giao hàng cho các đơn đã thanh toán
-            const shipMap = {};
-            await Promise.all(orders
-                .filter(o => ['PAID', 'SHIPPED', 'DELIVERED'].includes(o.status))
-                .map(async o => {
-                    try {
-                        const r = await fetch(`${SHIPPING_URL}/shipping/status?order_id=${o.id}`);
-                        if (r.ok) shipMap[o.id] = (await r.json()).status;
-                    } catch {}
-                }));
-
-            document.getElementById('coBody').innerHTML = orders.map(o => {
-                const s = ORDER_STATUS[o.status] || { text: o.status, cls: 'secondary' };
-                const ship = shipMap[o.id];
-                const canShip = ['PAID', 'SHIPPED', 'DELIVERED'].includes(o.status);
-                let shipUI = '';
-                if (canShip) {
-                    const cur = ship || 'Processing';
-                    const idx = SHIP_STEPS.indexOf(cur);
-                    const next = SHIP_STEPS[idx + 1];
-                    shipUI = `
-                        <div class="mt-2 pt-2 border-top d-flex align-items-center gap-2 flex-wrap">
-                            <span class="small text-muted">Giao hàng:</span>
-                            <span class="badge bg-info">${SHIP_LABEL[cur]}</span>
-                            ${next
-                                ? `<button class="btn btn-sm btn-success" onclick="advanceShip(${o.id}, '${next}')">
-                                       <i class="fas fa-arrow-right me-1"></i>Chuyển "${SHIP_LABEL[next]}"
-                                   </button>`
-                                : '<span class="text-success small"><i class="fas fa-check-circle me-1"></i>Đã giao xong</span>'}
-                        </div>`;
-                }
-                return `
-                    <div class="card mb-2">
-                        <div class="card-body py-2">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <strong>Đơn #${o.id}</strong>
-                                    <span class="badge bg-${s.cls} ms-2">${s.text}</span>
-                                    <div class="text-muted small mt-1">${o.items.length} sản phẩm · ${formatDate(o.created_at)}</div>
-                                    <div class="text-muted small">${o.shipping_address}</div>
-                                </div>
-                                <div class="fw-bold text-primary">${formatPrice(o.total_price)}</div>
-                            </div>
-                            ${shipUI}
-                        </div>
-                    </div>`;
-            }).join('');
-        } catch (e) {
-            document.getElementById('coBody').innerHTML = `<div class="alert alert-danger">${e.message}</div>`;
-        }
-    }
-
-    async function advanceShip(orderId, newStatus) {
-        try {
-            // Lấy id phiếu giao (create idempotent trả phiếu cũ kèm id)
-            const cr = await fetch(`${SHIPPING_URL}/shipping/create`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ order_id: orderId, address: '-' }),
-            });
-            const shipment = await cr.json();
-            const r = await fetch(`${SHIPPING_URL}/shipping/${shipment.id}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${api.getToken()}` },
-                body: JSON.stringify({ status: newStatus }),
-            });
-            const data = await r.json();
-            if (!r.ok) throw new Error(parseApiError(data, r.status));
-            await renderCustomerOrders(coUser.id);
-            const el = document.getElementById('coAlert');
-            el.className = 'alert alert-success';
-            el.textContent = `Đã cập nhật giao hàng đơn #${orderId} → ${SHIP_LABEL[newStatus]}`;
-            setTimeout(() => el.className = 'alert d-none', 2500);
-        } catch (e) {
-            const el = document.getElementById('coAlert');
-            el.className = 'alert alert-danger';
-            el.textContent = e.message;
         }
     }
 

@@ -64,6 +64,8 @@
     if (me && me.role !== 'admin' && me.role !== 'staff') window.location.href = '/profile.html';
     if (me) document.getElementById('sidebarUser').textContent = me.full_name || me.email || '';
 
+    const ORDER_URL = 'http://localhost:8004';
+    const PROD_URL = window.PRODUCT_API_URL;
     const STEPS = ['Processing', 'Shipping', 'Delivered'];
     const LABELS = { Processing: 'Đang xử lý', Shipping: 'Đang giao', Delivered: 'Đã giao' };
 
@@ -74,7 +76,8 @@
         if (type === 'success') setTimeout(() => el.className = 'alert d-none', 3000);
     }
 
-    let currentShipment = null;
+    let currentShipment = null, currentOrder = null, currentCustomer = null;
+    let productCache = {};
 
     async function lookup() {
         const orderId = document.getElementById('orderIdInput').value.trim();
@@ -83,52 +86,93 @@
         card.innerHTML = '<div class="text-muted">Đang tra cứu...</div>';
 
         try {
-            const r = await fetch(`${SHIPPING_URL}/shipping/status?order_id=${orderId}`);
-            if (r.status === 404) {
-                card.innerHTML = `<div class="alert alert-warning">Đơn #${orderId} chưa có phiếu giao (chưa thanh toán thành công?).</div>`;
+            // 1) Lấy đơn (admin xem được mọi đơn) → user_id, items, địa chỉ
+            const or = await fetch(`${ORDER_URL}/orders/${orderId}`, { headers: { Authorization: `Bearer ${api.getToken()}` } });
+            if (or.status === 404) {
+                card.innerHTML = `<div class="alert alert-warning">Không tìm thấy đơn #${orderId}.</div>`;
                 return;
             }
-            // Lấy id phiếu để PATCH: create idempotent trả lại phiếu cũ kèm id (BR-4)
-            const cr = await fetch(`${SHIPPING_URL}/shipping/create`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ order_id: Number(orderId), address: '-' }),
-            });
-            currentShipment = await cr.json();
-            renderShipment(currentShipment);
+            if (!or.ok) throw new Error(`Lỗi đọc đơn (${or.status})`);
+            currentOrder = await or.json();
+
+            // 2) Lấy thông tin khách (tên, SĐT) cho shipper
+            try { currentCustomer = await api.adminGetUser(currentOrder.user_id); } catch { currentCustomer = null; }
+
+            // 3) Tên sản phẩm
+            await Promise.all(currentOrder.items.map(async it => {
+                if (productCache[it.product_id]) return;
+                try { const pr = await fetch(`${PROD_URL}/products/${it.product_id}/`); if (pr.ok) productCache[it.product_id] = await pr.json(); } catch {}
+            }));
+
+            // 4) Phiếu giao: chỉ có khi đơn đã thanh toán
+            const sr = await fetch(`${SHIPPING_URL}/shipping/status?order_id=${orderId}`);
+            if (sr.status === 404) {
+                currentShipment = null;
+            } else {
+                const cr = await fetch(`${SHIPPING_URL}/shipping/create`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order_id: Number(orderId), address: currentOrder.shipping_address || '-' }),
+                });
+                currentShipment = await cr.json();
+            }
+            renderShipment();
         } catch (e) {
             card.innerHTML = `<div class="alert alert-danger">${e.message}</div>`;
         }
     }
 
-    function renderShipment(sm) {
-        const idx = STEPS.indexOf(sm.status);
-        const tracker = STEPS.map((s, i) => `
-            <div class="text-center flex-fill">
-                <div class="step rounded-circle mx-auto d-flex align-items-center justify-content-center
-                    ${i <= idx ? 'bg-success text-white' : 'bg-light text-muted'}">
-                    <i class="fas ${i < idx ? 'fa-check' : 'fa-circle'}"></i>
-                </div>
-                <div class="small mt-1 ${i <= idx ? 'fw-bold' : 'text-muted'}">${LABELS[s]}</div>
-            </div>
-            ${i < STEPS.length - 1 ? '<div class="flex-fill border-top mt-3" style="height:1px"></div>' : ''}
-        `).join('');
+    function renderShipment() {
+        const o = currentOrder, sm = currentShipment, c = currentCustomer;
+        const name = c ? (c.full_name || c.email) : `user #${o.user_id}`;
+        const phone = c && c.phone ? c.phone : 'chưa có SĐT';
 
-        const next = STEPS[idx + 1];
+        const items = o.items.map(it => {
+            const p = productCache[it.product_id];
+            return `<div class="d-flex justify-content-between small">
+                <span>${p ? p.name : '#' + it.product_id} × ${it.quantity}</span>
+                <span>${formatPrice(parseFloat(it.unit_price) * it.quantity)}</span>
+            </div>`;
+        }).join('');
+
+        // Thông tin giao hàng cho shipper
+        const shipperInfo = `
+            <div class="bg-light rounded p-3 mb-3">
+                <div class="fw-bold mb-1"><i class="fas fa-user me-2 text-primary"></i>${name}</div>
+                <div class="small"><i class="fas fa-phone me-2 text-muted"></i>${phone}</div>
+                <div class="small"><i class="fas fa-map-marker-alt me-2 text-muted"></i>${o.shipping_address}</div>
+            </div>`;
+
+        let shipBlock;
+        if (!sm) {
+            shipBlock = '<div class="alert alert-warning mb-0">Đơn chưa thanh toán nên chưa có phiếu giao.</div>';
+        } else {
+            const idx = STEPS.indexOf(sm.status);
+            const tracker = STEPS.map((s, i) => `
+                <div class="text-center flex-fill">
+                    <div class="step rounded-circle mx-auto d-flex align-items-center justify-content-center ${i <= idx ? 'bg-success text-white' : 'bg-light text-muted'}">
+                        <i class="fas ${i < idx ? 'fa-check' : 'fa-circle'}"></i>
+                    </div>
+                    <div class="small mt-1 ${i <= idx ? 'fw-bold' : 'text-muted'}">${LABELS[s]}</div>
+                </div>
+                ${i < STEPS.length - 1 ? '<div class="flex-fill border-top mt-3" style="height:1px"></div>' : ''}`).join('');
+            const next = STEPS[idx + 1];
+            shipBlock = `
+                <div class="d-flex align-items-start justify-content-between mb-4">${tracker}</div>
+                ${next
+                    ? `<button class="btn btn-success w-100" onclick="advance('${next}')"><i class="fas fa-arrow-right me-1"></i>Chuyển sang "${LABELS[next]}"</button>`
+                    : '<div class="alert alert-success mb-0"><i class="fas fa-check-circle me-1"></i>Đơn đã giao xong.</div>'}`;
+        }
+
         document.getElementById('shipmentCard').innerHTML = `
             <div class="card shadow-sm" style="max-width:640px">
                 <div class="card-header d-flex justify-content-between">
-                    <strong>Phiếu giao #${sm.id} — Đơn #${sm.order_id}</strong>
-                    <span class="badge bg-info">${LABELS[sm.status]}</span>
+                    <strong>Đơn #${o.id}${sm ? ' — Phiếu giao #' + sm.id : ''}</strong>
+                    <span class="fw-bold text-primary">${formatPrice(o.total_price)}</span>
                 </div>
                 <div class="card-body">
-                    <div class="text-muted small mb-1">Địa chỉ</div>
-                    <div class="mb-4">${sm.address}</div>
-                    <div class="d-flex align-items-start justify-content-between mb-4">${tracker}</div>
-                    ${next
-                        ? `<button class="btn btn-success w-100" onclick="advance('${next}')">
-                               <i class="fas fa-arrow-right me-1"></i>Chuyển sang "${LABELS[next]}"
-                           </button>`
-                        : '<div class="alert alert-success mb-0"><i class="fas fa-check-circle me-1"></i>Đơn đã giao xong.</div>'}
+                    ${shipperInfo}
+                    <div class="mb-3">${items}</div>
+                    ${shipBlock}
                 </div>
             </div>`;
     }
@@ -141,9 +185,9 @@
                 body: JSON.stringify({ status: newStatus }),
             });
             const data = await r.json();
-            if (!r.ok) throw new Error(data.error || `Lỗi ${r.status}`);
+            if (!r.ok) throw new Error(parseApiError(data, r.status));
             currentShipment = data;
-            renderShipment(data);
+            renderShipment();
             alertMsg(`Đã cập nhật sang "${LABELS[newStatus]}"`, 'success');
         } catch (e) {
             alertMsg(e.message, 'danger');
