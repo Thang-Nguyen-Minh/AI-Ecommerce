@@ -49,6 +49,8 @@ class RegisterSerializer(serializers.Serializer):
         },
     )
     full_name = serializers.CharField(max_length=200, required=False, default='')
+    phone = serializers.CharField(max_length=20, required=False, allow_blank=True, default='')
+    address = serializers.CharField(required=False, allow_blank=True, default='')
 
     def validate_email(self, value):
         if User.objects.filter(email__iexact=value).exists():
@@ -63,14 +65,28 @@ class RegisterSerializer(serializers.Serializer):
         email = validated_data['email']
         password = validated_data['password']
         full_name = validated_data.get('full_name', '')
+        phone = validated_data.get('phone', '')
+        address = validated_data.get('address', '').strip()
 
         user = User.objects.create_user(
             username=email,
             email=email,
             password=password,
             full_name=full_name,
+            phone=phone,
             role='customer',  # BR-1: luôn customer, không nhận từ client
         )
+        # Nếu khách nhập địa chỉ lúc đăng ký → tạo địa chỉ mặc định
+        if address:
+            UserAddress.objects.create(
+                user=user,
+                full_name=full_name or email,
+                phone=phone,
+                street=address,
+                district='',
+                city='',
+                is_default=True,
+            )
         return user
 
 
