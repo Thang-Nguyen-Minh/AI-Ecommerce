@@ -185,11 +185,13 @@ class APIClient {
     }
 
     // AUTH ENDPOINTS
-    async register(email, fullName, password) {
+    async register(email, fullName, password, phone = '', address = '') {
         return this.post('/auth/register/', {
             email,
             full_name: fullName,
             password,
+            phone,
+            address,
         });
     }
 
@@ -210,17 +212,25 @@ class APIClient {
     }
 
     async logout() {
-        try {
-            const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
-            if (refreshToken) {
-                await this.post('/auth/logout/', { refresh: refreshToken });
-            }
-        } catch (error) {
-            console.error('Logout error:', error);
-        }
-        
+        // Lấy token TRƯỚC khi xoá để còn gọi blacklist
+        const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY);
+        const accessToken = localStorage.getItem(TOKEN_KEY);
+
+        // Xoá trạng thái local NGAY → UI phản ánh đã đăng xuất tức thì,
+        // không phụ thuộc backend (sửa lỗi navbar còn "Tài khoản" sau khi logout).
         this.clearToken();
         localStorage.removeItem(USER_KEY);
+
+        // Best-effort: báo backend blacklist refresh token (không chặn UI)
+        if (refreshToken && accessToken) {
+            try {
+                await fetch(`${API_BASE_URL}/auth/logout/`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+                    body: JSON.stringify({ refresh: refreshToken }),
+                });
+            } catch (e) { /* offline cũng không sao, token đã xoá local */ }
+        }
     }
 
     // TOKEN MANAGEMENT
