@@ -64,8 +64,8 @@ def pay(request):
 def payment_status(request):
     """GET /payment/status?order_id=<id>"""
     order_id = request.query_params.get('order_id')
-    if not order_id:
-        return Response({'error': 'order_id là bắt buộc'}, status=400)
+    if not order_id or not str(order_id).isdigit():
+        return Response({'error': 'order_id không hợp lệ'}, status=400)
 
     payment = Payment.objects.filter(order_id=order_id).first()
     if not payment:
