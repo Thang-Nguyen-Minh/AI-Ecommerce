@@ -32,8 +32,22 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 # ── Register API (Email-based) ───────────────────────
 class RegisterSerializer(serializers.Serializer):
-    email = serializers.EmailField(required=True)
-    password = serializers.CharField(min_length=8, write_only=True, required=True)
+    email = serializers.EmailField(
+        required=True,
+        error_messages={
+            'required': 'Email là bắt buộc',
+            'blank': 'Email không được để trống',
+            'invalid': 'Email không hợp lệ',
+        },
+    )
+    password = serializers.CharField(
+        min_length=8, write_only=True, required=True,
+        error_messages={
+            'required': 'Mật khẩu là bắt buộc',
+            'blank': 'Mật khẩu không được để trống',
+            'min_length': 'Mật khẩu phải có ít nhất 8 ký tự',
+        },
+    )
     full_name = serializers.CharField(max_length=200, required=False, default='')
 
     def validate_email(self, value):
