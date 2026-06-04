@@ -50,6 +50,7 @@ class RegisterSerializer(serializers.Serializer):
     )
     full_name = serializers.CharField(max_length=200, required=False, default='')
     phone = serializers.CharField(max_length=20, required=False, allow_blank=True, default='')
+    occupation = serializers.CharField(max_length=120, required=False, allow_blank=True, default='')
     address = serializers.CharField(required=False, allow_blank=True, default='')
 
     def validate_email(self, value):
@@ -66,6 +67,7 @@ class RegisterSerializer(serializers.Serializer):
         password = validated_data['password']
         full_name = validated_data.get('full_name', '')
         phone = validated_data.get('phone', '')
+        occupation = validated_data.get('occupation', '')
         address = validated_data.get('address', '').strip()
 
         user = User.objects.create_user(
@@ -74,6 +76,7 @@ class RegisterSerializer(serializers.Serializer):
             password=password,
             full_name=full_name,
             phone=phone,
+            occupation=occupation,
             role='customer',  # BR-1: luôn customer, không nhận từ client
         )
         # Nếu khách nhập địa chỉ lúc đăng ký → tạo địa chỉ mặc định
@@ -134,7 +137,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model  = User
         fields = [
-            'id', 'username', 'email', 'full_name', 'phone',
+            'id', 'username', 'email', 'full_name', 'phone', 'occupation',
             'avatar', 'role', 'role_display', 'is_active',
             'created_at', 'updated_at', 'addresses',
         ]
@@ -191,7 +194,7 @@ class AdminCreateUserSerializer(serializers.Serializer):
 class UpdateProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model  = User
-        fields = ['full_name', 'phone', 'avatar']
+        fields = ['full_name', 'phone', 'occupation', 'avatar']
 
 
 # ── Change Password ───────────────────────────────────

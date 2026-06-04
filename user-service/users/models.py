@@ -30,6 +30,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     email      = models.EmailField(max_length=255, unique=True)
     full_name  = models.CharField(max_length=200, blank=True, default='')
     phone      = models.CharField(max_length=20,  blank=True, default='')
+    occupation = models.CharField(max_length=120, blank=True, default='', help_text='Nghề nghiệp — phục vụ knowledge graph (Neo4j)')
     avatar     = models.URLField(blank=True, default='')
     role       = models.CharField(max_length=20, choices=ROLE_CHOICES, default='customer')
     is_active  = models.BooleanField(default=True)
