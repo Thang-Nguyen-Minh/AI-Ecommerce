@@ -128,20 +128,28 @@ def create_order(request):
 
 
 def list_orders(request):
-    qs = Order.objects.filter(user_id=request.user.id)
+    # BR-6: khách chỉ xem đơn của mình.
+    # Admin/staff có thể xem đơn của một khách qua ?user_id=<id> (để quản lý giao hàng).
+    target_user = request.query_params.get('user_id')
+    is_staff = getattr(request.user, 'role', None) in ('admin', 'staff')
+    if target_user and is_staff:
+        qs = Order.objects.filter(user_id=target_user)
+    else:
+        qs = Order.objects.filter(user_id=request.user.id)
     return Response(OrderSerializer(qs, many=True).data)
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def order_detail(request, pk):
-    """GET /orders/{id} — BR-6: cách ly đơn."""
+    """GET /orders/{id} — BR-6: cách ly đơn (admin/staff xem được mọi đơn)."""
     try:
         order = Order.objects.get(pk=pk)
     except Order.DoesNotExist:
         return Response({'error': 'Không tìm thấy đơn hàng'}, status=404)
 
-    if order.user_id != request.user.id:
+    is_staff = getattr(request.user, 'role', None) in ('admin', 'staff')
+    if order.user_id != request.user.id and not is_staff:
         return Response({'error': 'Không có quyền xem đơn này'}, status=403)
 
     return Response(OrderSerializer(order).data)
