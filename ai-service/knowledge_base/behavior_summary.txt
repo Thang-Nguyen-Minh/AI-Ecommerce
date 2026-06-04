@@ -1,0 +1,7 @@
+Tổng số events: 756
+Số user có hành vi: 50
+
+Theo action:
+  view: 467
+  click: 202
+  add_to_cart: 87
