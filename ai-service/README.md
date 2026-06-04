@@ -9,11 +9,15 @@ Microservice gợi ý sản phẩm + chatbot tư vấn (FastAPI, cổng **8007**
 | 0  | FastAPI + `/events` + behavior store (SQLite) | ✅ |
 | 1  | `/recommend` baseline phổ biến + cold start | ✅ |
 | 3  | Knowledge Graph Neo4j (VIEW/BUY/SIMILAR) | ✅ |
-| 4  | Chatbot retrieval trên catalog (không LLM) | ✅ |
-| 2/5| Hybrid: `final = W_GRAPH·graph + W_LSTM·cooccurrence + W_POP·popularity` | ✅ (heuristic) |
+| 4  | Chatbot RAG: vector store ngữ nghĩa (FAISS + sentence-transformers) + reply Auto (LLM/mẫu) | ✅ |
+| 2/5| Hybrid: `final = W_GRAPH·graph + W_LSTM·lstm + W_POP·popularity` | ✅ |
 
-> LSTM ở đây là **item-based co-occurrence** từ behavior store (stand-in nhẹ, chạy được cả khi
-> Neo4j chết) — không train deep model. RAG/vector store chưa wiring (chatbot dùng keyword retrieval).
+> **LSTM thật**: model torch Embedding→LSTM→Linear train next-item từ behavior store
+> (`train_lstm.py`, snapshot đóng băng `ai_data/lstm/model.pt`, eval → xác định). Không có
+> snapshot → tự hạ cấp về item-based co-occurrence (BR-4).
+> **RAG thật**: embed mô tả sản phẩm (sentence-transformers, model cache sẵn) → FAISS index
+> (`ai_data/vector/`). Chatbot tìm kiếm ngữ nghĩa → reply Auto: có `OPENAI_API_KEY` thì GPT
+> (grounding chống bịa), không có thì mẫu. Vector chết → fallback keyword → popularity.
 
 ## API
 
@@ -23,7 +27,8 @@ Microservice gợi ý sản phẩm + chatbot tư vấn (FastAPI, cổng **8007**
 | GET  | `/recommend?n=5` | token | Top-N gợi ý (hybrid + cold-start fallback) |
 | POST | `/chatbot` | token | `{message}` → `{reply, suggested:[id]}` (sản phẩm có thật) |
 | POST | `/admin/build-graph?threshold=5` | admin/staff | Dựng cạnh Neo4j từ behavior store + tính SIMILAR |
-| GET  | `/health` | — | Health + thống kê graph |
+| POST | `/admin/build-vector` | admin/staff | Dựng FAISS index từ catalog (RAG) |
+| GET  | `/health` | — | Health + thống kê graph + vector |
 
 ## Chạy & seed
 
@@ -33,6 +38,10 @@ docker compose up -d ai-service neo4j
 docker exec ecom-ai-service python seed_behavior.py
 # Dựng knowledge graph từ behavior store:
 TOKEN=<admin access>; curl -X POST "http://localhost:8007/admin/build-graph?threshold=5" -H "Authorization: Bearer $TOKEN"
+# Dựng vector index cho RAG chatbot:
+curl -X POST "http://localhost:8007/admin/build-vector" -H "Authorization: Bearer $TOKEN"
+# Train LSTM next-item (snapshot ai_data/lstm/model.pt):
+docker exec ecom-ai-service python train_lstm.py
 ```
 
 ## Business rules đã pass (TC-01→TC-14)

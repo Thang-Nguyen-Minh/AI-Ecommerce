@@ -3,7 +3,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import db, graph
+from . import db, graph, vector_store
 from .routers import admin, chatbot, events, recommend
 
 logging.basicConfig(level=logging.INFO)
@@ -26,6 +26,9 @@ app.include_router(admin.router, tags=["admin"])
 @app.on_event("startup")
 def _startup():
     db.init_db()
+    # Best-effort: nạp/dựng vector index trong nền (không chặn startup)
+    import threading
+    threading.Thread(target=vector_store.ensure_index, daemon=True).start()
 
 
 @app.get("/health")
@@ -36,4 +39,5 @@ def health():
         "status": "ok",
         "events": db.count_events(),
         "graph": graph.stats(),
+        "vector": vector_store.stats(),
     }

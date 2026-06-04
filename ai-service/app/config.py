@@ -12,6 +12,12 @@ NEO4J_PASSWORD = os.environ.get("NEO4J_PASSWORD", "ecom123")
 # Behavior store (SQLite) — DB riêng của ai-service, persist qua volume mount
 BEHAVIOR_DB = os.environ.get("BEHAVIOR_DB", "/app/ai_data/behavior.db")
 
+# RAG vector store (FAISS) + LSTM snapshot — runtime data (gitignored)
+VECTOR_DIR = os.environ.get("VECTOR_DIR", "/app/ai_data/vector")
+LSTM_DIR = os.environ.get("LSTM_DIR", "/app/ai_data/lstm")
+EMBED_MODEL = os.environ.get("EMBED_MODEL", "paraphrase-multilingual-MiniLM-L12-v2")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "").strip()
+
 # Trọng số hybrid (GĐ5): final = w1·lstm + w2·graph + w3·popularity
 W_LSTM = float(os.environ.get("W_LSTM", "0.2"))
 W_GRAPH = float(os.environ.get("W_GRAPH", "0.5"))

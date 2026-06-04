@@ -6,7 +6,7 @@ final = W_GRAPH·graph + W_LSTM·sequence(cooccurrence) + W_POP·popularity
 Mọi tầng đều chịu lỗi: thành phần con chết → bỏ qua tín hiệu đó, không sập (BR-4).
 Cold start (user chưa có hành vi) → popularity → catalog (luôn có gợi ý, BR-1).
 """
-from .. import db, graph, product_client
+from .. import db, graph, lstm_model, product_client
 from ..config import W_GRAPH, W_LSTM, W_POP
 
 
@@ -26,8 +26,13 @@ def recommend(user_id: int, n: int = 5):
     for pid, w in _norm(graph.recommend_personalized(user_id, n * 4)).items():
         scores[pid] = scores.get(pid, 0) + W_GRAPH * w
 
-    # GĐ2: sequence/co-occurrence từ behavior store
-    for pid, w in _norm(db.cooccurrence(user_id, n * 4)).items():
+    # GĐ2: LSTM next-item nếu có snapshot, không thì co-occurrence (fallback, BR-4)
+    if lstm_model.available():
+        recent = [pid for pid, _, _ in reversed(db.user_recent(user_id, 20))]  # chronological
+        seq_signal = lstm_model.predict_next(recent, n * 4, exclude=seen)
+    else:
+        seq_signal = db.cooccurrence(user_id, n * 4)
+    for pid, w in _norm(seq_signal).items():
         scores[pid] = scores.get(pid, 0) + W_LSTM * w
 
     # GĐ1: popularity baseline

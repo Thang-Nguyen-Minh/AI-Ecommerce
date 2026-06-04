@@ -71,7 +71,8 @@ yarn-error.log*
 ai-service/models/
 ai-service/data/faiss_index/
 ai-service/data/chroma_db/
-ai-service/ai_data/          # behavior store SQLite (runtime data)
+# Behavior store SQLite + vector index + LSTM snapshot (runtime data)
+ai-service/ai_data/
 *.bin
 *.safetensors
 *.gguf

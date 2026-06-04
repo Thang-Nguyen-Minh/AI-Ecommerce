@@ -101,6 +101,18 @@ def all_events():
     return [(r["user_id"], r["product_id"], r["action"]) for r in rows]
 
 
+def ordered_sequences():
+    """Chuỗi product_id theo thứ tự thời gian cho từng user (train LSTM)."""
+    with _conn() as c:
+        rows = c.execute(
+            "SELECT user_id, product_id FROM behavior_event ORDER BY user_id, ts, id"
+        ).fetchall()
+    seqs = {}
+    for r in rows:
+        seqs.setdefault(r["user_id"], []).append(r["product_id"])
+    return seqs
+
+
 def count_events():
     with _conn() as c:
         return c.execute("SELECT COUNT(*) AS n FROM behavior_event").fetchone()["n"]
