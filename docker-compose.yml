@@ -462,6 +462,7 @@ services:
       REDIS_URL:           redis://redis:6379/0
       OPENAI_API_KEY:      ${OPENAI_API_KEY}
       PRODUCT_SERVICE_URL: http://product-service:8000
+      SECRET_KEY:          ${SECRET_KEY}
     depends_on:
       - neo4j
       - redis
@@ -470,7 +471,7 @@ services:
       - ecom-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8006/ai/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 15s
       retries: 5
@@ -502,6 +503,8 @@ services:
       - "7687:7687"     # Bolt protocol
     environment:
       NEO4J_AUTH:                       ${NEO4J_USER}/${NEO4J_PASSWORD}
+      # Cho phép mật khẩu < 8 ký tự (ecom123) ở môi trường dev
+      NEO4J_dbms_security_auth__minimum__password__length: "4"
       NEO4J_server_memory_heap_initial__size: 256m
       NEO4J_server_memory_heap_max__size:     512m
     volumes:
