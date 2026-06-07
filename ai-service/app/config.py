@@ -17,6 +17,7 @@ VECTOR_DIR = os.environ.get("VECTOR_DIR", "/app/ai_data/vector")
 LSTM_DIR = os.environ.get("LSTM_DIR", "/app/ai_data/lstm")
 EMBED_MODEL = os.environ.get("EMBED_MODEL", "paraphrase-multilingual-MiniLM-L12-v2")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "").strip()
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY", "").strip()
 
 # Trọng số hybrid (GĐ5): final = w1·lstm + w2·graph + w3·popularity
 W_LSTM = float(os.environ.get("W_LSTM", "0.2"))

@@ -461,6 +461,7 @@ services:
       NEO4J_PASSWORD:      ${NEO4J_PASSWORD}
       REDIS_URL:           redis://redis:6379/0
       OPENAI_API_KEY:      ${OPENAI_API_KEY}
+      GOOGLE_API_KEY:      ${GOOGLE_API_KEY}
       PRODUCT_SERVICE_URL: http://product-service:8000
       SECRET_KEY:          ${SECRET_KEY}
     depends_on:

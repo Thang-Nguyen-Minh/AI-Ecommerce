@@ -1,0 +1,2 @@
+# Thêm đặc thù cho AI service (nếu có)
+# Phần cơ bản đã có trong base image
