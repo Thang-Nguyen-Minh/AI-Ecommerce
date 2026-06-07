@@ -47,7 +47,7 @@ Browser / Client          │            Nginx Gateway             │  :80
 | order-service    | Django + DRF   | PostgreSQL | 8004  | ✅ Done  |
 | payment-service  | Django + DRF   | MySQL      | 8005  | ✅ Done  |
 | shipping-service | Django + DRF   | MySQL      | 8006  | ✅ Done  |
-| ai-service       | FastAPI        | Neo4j      | 8007  | 🔧 WIP   |
+| ai-service       | FastAPI + LangChain | Neo4j + FAISS | 8007  | ✅ Done  |
 | frontend         | HTML/JS/Bootstrap | —       | 80    | ✅ Done  |
 | gateway          | Nginx          | —          | 80    | ✅ Done  |
 
@@ -70,6 +70,12 @@ Browser / Client          │            Nginx Gateway             │  :80
 cp .env.example .env
 # Sửa .env nếu cần đổi mật khẩu
 ```
+
+> **AI Service (Gemini RAG):** Để dùng Google Gemini cho chatbot + embedding, thêm vào `.env`:
+> ```
+> GOOGLE_API_KEY=your_google_api_key_here
+> ```
+> Không có key → tự động fallback sang HuggingFace sentence-transformers (không cần API, chạy local).
 
 ### Bước 2 — Build base image (chỉ cần chạy lần đầu)
 
@@ -175,6 +181,42 @@ curl http://localhost:8002/products/
 # Tạo dữ liệu demo
 curl -X POST http://localhost:8002/products/seed-demo/
 ```
+
+### AI Service (`:8007`)
+
+AI Service triển khai **3 thành phần** kết hợp cho gợi ý sản phẩm và chatbot tư vấn:
+
+| Thành phần | File | Mô tả |
+|-----------|------|-------|
+| **LSTM** | `ai-service/app/lstm_model.py` | Dự đoán sản phẩm tiếp theo từ chuỗi hành vi người dùng |
+| **Knowledge Graph** | `ai-service/app/graph.py` | Neo4j — node User/Product, edge VIEW/BUY/SIMILAR |
+| **RAG** | `ai-service/app/vector_store.py` + `chatbot_service.py` | LangChain + FAISS + Gemini LLM (hoặc HuggingFace fallback) |
+
+**Hybrid scoring:** `final_score = 0.2 × LSTM + 0.5 × Graph + 0.3 × Popularity`
+
+```bash
+# Chatbot tư vấn (auth tùy chọn)
+curl -X POST http://localhost/ai/chatbot \
+  -H "Content-Type: application/json" \
+  -d '{"message": "tôi cần laptop gaming giá rẻ"}'
+
+# Gợi ý sản phẩm theo user
+curl "http://localhost/ai/recommend?user_id=1"
+
+# Ghi hành vi (view/click/add_to_cart)
+curl -X POST http://localhost/ai/events \
+  -H "Content-Type: application/json" \
+  -d '{"user_id":1,"product_id":5,"action":"view"}'
+
+# Build vector index (cần chạy sau khi seed sản phẩm)
+curl -X POST http://localhost/ai/admin/build-index
+
+# Kiểm tra trạng thái vector store
+curl http://localhost/ai/admin/stats
+# → {"ready": true, "count": 50, "engine": "gemini"}
+```
+
+> **Lưu ý khởi động lần đầu:** Seed sản phẩm trước (`/products/seed-demo/`) rồi mới build index.
 
 ---
 
