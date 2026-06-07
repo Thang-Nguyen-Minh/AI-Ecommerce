@@ -197,6 +197,7 @@ class APIClient {
     }
 
     async login(email, password) {
+        this.clearToken();
         const data = await this.post('/auth/login/', { email, password });
         if (data) {
             // Đảm bảo lấy token từ đúng cấu trúc response
