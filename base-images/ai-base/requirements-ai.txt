@@ -1,0 +1,30 @@
+# ── FastAPI ──────────────────────────────────────────
+fastapi==0.110.0
+uvicorn[standard]==0.29.0
+python-multipart==0.0.9
+
+# ── ML / AI ──────────────────────────────────────────
+sentence-transformers==2.6.1
+faiss-cpu==1.8.0
+numpy==1.26.4
+pandas==2.2.1
+
+# ── Vector DB ────────────────────────────────────────
+chromadb==0.4.24
+
+# ── Graph DB ─────────────────────────────────────────
+neo4j==5.18.0
+
+# ── LLM (Optional — dùng API) ────────────────────────
+openai==1.25.0
+
+# ── LangChain + Google Gemini ─────────────────────────
+langchain==0.2.16
+langchain-community==0.2.16
+langchain-google-genai==1.0.10
+
+# ── Utils ────────────────────────────────────────────
+redis==5.0.4
+requests==2.31.0
+python-decouple==3.8
+pydantic==2.6.4
