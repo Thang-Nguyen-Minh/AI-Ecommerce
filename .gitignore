@@ -96,3 +96,6 @@ coverage.xml
 *.bak
 *.orig
 *.backup
+resume.tex
+*.bat
+*.ps1
