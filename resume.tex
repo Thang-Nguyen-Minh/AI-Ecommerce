@@ -1,0 +1,167 @@
+%-------------------------
+% Resume in Latex
+% Author : Jake Gutierrez
+% Based off of: https://github.com/sb2nov/resume
+% License : MIT
+%------------------------
+
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage{latexsym}
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage{marvosym}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{verbatim}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage[english]{babel}
+\usepackage{tabularx}
+\input{glyphtounicode}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\addtolength{\oddsidemargin}{-0.5in}
+\addtolength{\evensidemargin}{-0.5in}
+\addtolength{\textwidth}{1in}
+\addtolength{\topmargin}{-.5in}
+\addtolength{\textheight}{1.0in}
+
+\urlstyle{same}
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+\titleformat{\section}{
+  \vspace{-4pt}\scshape\raggedright\large
+}{}{0em}{}[\color{black}\titlerule \vspace{-5pt}]
+
+\pdfgentounicode=1
+
+%-------------------------
+% Custom commands
+\newcommand{\resumeItem}[1]{
+  \item\small{{#1 \vspace{-2pt}}}
+}
+
+\newcommand{\resumeSubheading}[4]{
+  \vspace{-2pt}\item
+    \begin{tabular*}{0.97\textwidth}[t]{l@{\extracolsep{\fill}}r}
+      \textbf{#1} & #2 \\
+      \textit{\small#3} & \textit{\small #4} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeProjectHeading}[2]{
+    \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \small#1 & #2 \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\renewcommand\labelitemii{$\vcenter{\hbox{\tiny$\bullet$}}$}
+
+\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.15in, label={}]}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
+\newcommand{\resumeItemListStart}{\begin{itemize}}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
+
+%-------------------------------------------
+\begin{document}
+
+%-----------HEADING-----------
+\begin{center}
+    \textbf{\Huge \scshape Nguyen Minh Thang} \\ \vspace{1pt}
+    \small 0352643470 $|$
+    \href{mailto:nmthang2004@gmail.com}{\underline{nmthang2004@gmail.com}} $|$
+    \href{https://github.com/Thang-Nguyen-Minh}{\underline{github.com/Thang-Nguyen-Minh}}
+\end{center}
+
+
+%-----------EDUCATION-----------
+\section{Education}
+  \resumeSubHeadingListStart
+    \resumeSubheading
+      {Posts and Telecommunications Institute of Technology}{Ha Noi, Vietnam}
+      {Bachelor of Information Technology \textemdash\ GPA: 3.0/4.0}{2022 -- 2026}
+  \resumeSubHeadingListEnd
+
+
+%-----------EXPERIENCE-----------
+\section{Experience}
+  \resumeSubHeadingListStart
+
+    \resumeSubheading
+      {Python Developer (Freelance / Personal Projects)}{Jan. 2025 -- Present}
+      {Self-employed}{Remote}
+      \resumeItemListStart
+        \resumeItem{Built and deployed multiple Python-based web applications using Flask and Streamlit}
+        \resumeItem{Worked with REST APIs, PostgreSQL, and Docker to develop and containerize backend services}
+        \resumeItem{Applied data processing workflows using NumPy and Pandas to clean and analyze structured datasets}
+        \resumeItem{Developed computer vision and ML pipelines for image classification and object detection tasks}
+      \resumeItemListEnd
+
+  \resumeSubHeadingListEnd
+
+
+%-----------PROJECTS-----------
+\section{Projects}
+    \resumeSubHeadingListStart
+
+      \resumeProjectHeading
+          {\textbf{E-Commerce Microservices Platform with AI Advisory} $|$ \emph{Python, Django, FastAPI, Docker, Neo4j, LangChain}}{Apr. 2026 -- Jun. 2026}
+          \resumeItemListStart
+            \resumeItem{Architected a fully distributed e-commerce system with 7 independent microservices (User, Product, Cart, Order, Payment, Shipping, AI) following Domain-Driven Design principles, each owning a dedicated PostgreSQL or MySQL database}
+            \resumeItem{Built a hybrid AI recommendation engine combining LSTM for sequential behavior prediction, Neo4j Knowledge Graph (BUY/VIEW/SIMILAR edges) for product relationship traversal, and RAG (FAISS + Google Gemini) for a natural-language product advisory chatbot}
+            \resumeItem{Implemented Nginx as API Gateway with JWT authentication and Role-Based Access Control (Admin/Staff/Customer); containerized 13 Docker services including Neo4j, Redis, and two database engines for one-command deployment}
+            \resumeItem{Delivered a full-stack frontend (11 HTML/JS pages) covering product browsing, cart, order tracking with status workflow (PENDING $\rightarrow$ PAID $\rightarrow$ SHIPPED $\rightarrow$ DELIVERED), and an embedded AI chat widget}
+          \resumeItemListEnd
+
+      \resumeProjectHeading
+          {\textbf{Plant Disease Detection Dataset Pipeline} $|$ \emph{Python, YOLOv9, OpenCV, Pascal VOC, PyYAML}}{Jan. 2025 -- Present}
+          \resumeItemListStart
+            \resumeItem{Built an end-to-end data engineering pipeline to rebalance a 29-class YOLO object detection dataset (PlantDoc) for plant leaf disease detection}
+            \resumeItem{Identified 7 under-represented classes ($<$500 bounding boxes) through automated statistical analysis and designed a targeted multi-batch ingestion strategy}
+            \resumeItem{Developed an ingestion pipeline supporting both YOLO and Pascal VOC XML formats, with automated label validation, blur filtering (Variance of Laplacian), and SHA-256 duplicate detection}
+            \resumeItem{Implemented per-class readiness gating and manifest-based safe merge workflow, allowing selective merging at the class level with full before/after audit reports}
+            \resumeItem{Wrote 11 unit tests covering class mapping, label validation, blur/duplicate filtering, review artifacts, and merge logic; maintained 100\% pass rate across all pipeline iterations}
+          \resumeItemListEnd
+
+      \resumeProjectHeading
+          {\textbf{Traffic Sign Recognition} $|$ \emph{Python, TensorFlow, Keras, Streamlit, Hugging Face}}{Mar. 2025 -- Jun. 2025}
+          \resumeItemListStart
+            \resumeItem{Built a CNN model to classify 43 types of road signs on the GTSRB dataset (50K+ images), achieving $\sim$97\% validation accuracy}
+            \resumeItem{Applied Data Augmentation (rotation, zoom, shear) and Dropout regularization to reduce overfitting}
+            \resumeItem{Deployed as an interactive Streamlit web app with real-time image upload and prediction}
+            \resumeItem{Source code \& demo: \href{https://github.com/Thang-Nguyen-Minh/traffic-sign-recognition}{\underline{github.com/Thang-Nguyen-Minh/traffic-sign-recognition}}}
+          \resumeItemListEnd
+
+      \resumeProjectHeading
+          {\textbf{Gitlytics} $|$ \emph{Python, Flask, React, PostgreSQL, Docker}}{Sep. 2025 -- Feb. 2026}
+          \resumeItemListStart
+            \resumeItem{Developed a full-stack web app with Flask REST API and React frontend to visualize GitHub collaboration data}
+            \resumeItem{Implemented GitHub OAuth and used Celery \& Redis for asynchronous background task processing}
+          \resumeItemListEnd
+
+    \resumeSubHeadingListEnd
+
+
+%-----------TECHNICAL SKILLS-----------
+\section{Technical Skills}
+ \begin{itemize}[leftmargin=0.15in, label={}]
+    \small{\item{
+     \textbf{Languages}{: Python, Java, JavaScript, SQL, HTML/CSS} \\
+     \textbf{AI / ML}{: TensorFlow, Keras, Scikit-Learn, OpenCV, YOLOv9, LangChain, FAISS, NumPy, Pandas, Matplotlib} \\
+     \textbf{Techniques}{: Object Detection, CNN, LSTM, RAG, Knowledge Graph, Data Augmentation, Dataset Curation} \\
+     \textbf{Frameworks}{: Django, FastAPI, Flask, React, Streamlit} \\
+     \textbf{Tools \& Deployment}{: Git, Docker, Nginx, Neo4j, Redis, PostgreSQL, MySQL, VS Code, PyCharm}
+    }}
+ \end{itemize}
+
+%-------------------------------------------
+\end{document}
