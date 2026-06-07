@@ -20,12 +20,14 @@ class Order(models.Model):
         'CANCELLED':      [],
     }
 
-    user_id         = models.IntegerField()               # BR-1: from JWT
-    total_price     = models.DecimalField(max_digits=14, decimal_places=2)  # BR-3: server-computed
-    status          = models.CharField(max_length=50, choices=STATUS_CHOICES, default='PENDING')
+    user_id          = models.IntegerField()               # BR-1: from JWT
+    total_price      = models.DecimalField(max_digits=14, decimal_places=2)  # BR-3: server-computed
+    status           = models.CharField(max_length=50, choices=STATUS_CHOICES, default='PENDING')
     shipping_address = models.TextField()
-    created_at      = models.DateTimeField(auto_now_add=True)
-    updated_at      = models.DateTimeField(auto_now=True)
+    recipient_name   = models.CharField(max_length=100, blank=True, default='')
+    phone            = models.CharField(max_length=20, blank=True, default='')
+    created_at       = models.DateTimeField(auto_now_add=True)
+    updated_at       = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = 'orders'

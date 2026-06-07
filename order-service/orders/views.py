@@ -35,6 +35,9 @@ def create_order(request):
     if not shipping_address:
         return Response({'error': 'shipping_address là bắt buộc'}, status=400)
 
+    recipient_name = request.data.get('recipient_name', '').strip()
+    phone = request.data.get('phone', '').strip()
+
     # Cờ test sandbox (vd "fail") để kiểm chứng TC-09; production payment bỏ qua.
     simulate = request.data.get('simulate')
 
@@ -78,6 +81,8 @@ def create_order(request):
         total_price=total,
         status='PENDING',
         shipping_address=shipping_address,
+        recipient_name=recipient_name,
+        phone=phone,
     )
     for li in line_items:
         OrderItem.objects.create(order=order, **li)
