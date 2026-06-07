@@ -81,6 +81,10 @@ async function loadCart() {
 async function placeOrder(e) {
     e.preventDefault();
     const address = document.getElementById('shippingAddress').value.trim();
+    const recipientName = document.getElementById('recipientName').value.trim();
+    const recipientPhone = document.getElementById('recipientPhone').value.trim();
+    if (!recipientName) { showAlert('Vui lòng nhập tên người nhận', 'warning'); return; }
+    if (!recipientPhone) { showAlert('Vui lòng nhập số điện thoại', 'warning'); return; }
     if (!address) { showAlert('Vui lòng nhập địa chỉ giao hàng', 'warning'); return; }
 
     // payment U-04: khóa nút, hiện trạng thái "đang xử lý"
@@ -89,7 +93,7 @@ async function placeOrder(e) {
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý thanh toán...';
     document.getElementById('alertBox').className = 'alert d-none';
 
-    const body = { shipping_address: address };
+    const body = { shipping_address: address, recipient_name: recipientName, phone: recipientPhone };
     // Demo nhánh lỗi (payment U-02): gửi cờ sandbox simulate=fail
     if (document.getElementById('simulateFail')?.checked) body.simulate = 'fail';
 
@@ -152,6 +156,11 @@ function showAlert(html, type) {
 async function prefillAddress() {
     try {
         const profile = await api.getProfile();
+        const nameBox = document.getElementById('recipientName');
+        const phoneBox = document.getElementById('recipientPhone');
+        if (nameBox && !nameBox.value.trim() && profile.full_name) nameBox.value = profile.full_name;
+        if (phoneBox && !phoneBox.value.trim() && profile.phone) phoneBox.value = profile.phone;
+
         const addrs = profile.addresses || [];
         const def = addrs.find(a => a.is_default) || addrs[0];
         if (def) {
@@ -159,7 +168,7 @@ async function prefillAddress() {
             const box = document.getElementById('shippingAddress');
             if (box && !box.value.trim()) box.value = parts.join(', ');
         }
-    } catch { /* không có địa chỉ cũng không sao */ }
+    } catch { /* không có profile cũng không sao */ }
 }
 
 document.getElementById('checkoutForm').addEventListener('submit', placeOrder);

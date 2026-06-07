@@ -54,6 +54,9 @@ async function loadOrders() {
                         </div>
                     </div>
                     <div class="text-muted small mt-2">
+                        ${o.recipient_name ? `<i class="fas fa-user me-1"></i>${o.recipient_name}` : ''}
+                        ${o.phone ? `&nbsp;·&nbsp;<i class="fas fa-phone me-1"></i>${o.phone}` : ''}
+                        ${(o.recipient_name || o.phone) ? '<br>' : ''}
                         <i class="fas fa-map-pin me-1"></i>${o.shipping_address}
                         &nbsp;·&nbsp; ${o.items.length} sản phẩm
                     </div>

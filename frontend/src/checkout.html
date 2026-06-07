@@ -30,9 +30,21 @@
         <!-- Địa chỉ giao hàng -->
         <div class="col-md-7">
             <div class="card shadow-sm">
-                <div class="card-header"><h6 class="mb-0"><i class="fas fa-map-pin me-2"></i>Địa chỉ giao hàng</h6></div>
+                <div class="card-header"><h6 class="mb-0"><i class="fas fa-map-pin me-2"></i>Thông tin giao hàng</h6></div>
                 <div class="card-body">
                     <form id="checkoutForm">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-7">
+                                <label class="form-label">Tên người nhận <span class="text-danger">*</span></label>
+                                <input type="text" id="recipientName" class="form-control"
+                                    placeholder="Họ và tên người nhận" required>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                                <input type="tel" id="recipientPhone" class="form-control"
+                                    placeholder="0901234567" required>
+                            </div>
+                        </div>
                         <div class="mb-3">
                             <label class="form-label">Địa chỉ nhận hàng <span class="text-danger">*</span></label>
                             <textarea id="shippingAddress" class="form-control" rows="3"
